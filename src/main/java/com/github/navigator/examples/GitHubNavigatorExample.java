@@ -12,10 +12,11 @@ public class GitHubNavigatorExample {
     public static void main(String[] args) {
         System.out.println("GitHub Navigator Example");
         if (args.length < 1) {
-            System.err.println("Usage: java GitHubNavigatorExample <repository-url> [branch] [clone-directory] [personal-access-token]");
+            System.err.println("Usage: java GitHubNavigatorExample <repository-url> [branch] [clone-directory] [file-filter] [personal-access-token]");
             System.err.println("  repository-url: The GitHub repository URL (e.g., https://github.com/user/repo.git)");
             System.err.println("  branch: The branch to use (defaults to 'main' if not specified)");
             System.err.println("  clone-directory: Local directory path where the repository will be cloned (defaults to temp directory)");
+            System.err.println("  file-filter: File filter pattern (e.g., '*.java' or '*.java,*.md' for multiple filters)");
             System.err.println("  personal-access-token: Optional GitHub personal access token for private repositories");
             System.exit(1);
         }
@@ -23,7 +24,8 @@ public class GitHubNavigatorExample {
         String repositoryUrl = args[0];
         String branch = args.length > 1 ? args[1] : "main";
         String cloneDirectory = args.length > 2 ? args[2] : null;
-        String token = args.length > 3 ? args[3] : null;
+        String fileFilter = args.length > 3 ? args[3] : null;
+        String token = args.length > 4 ? args[4] : null;
         
         // Set default clone directory to system temp directory if not provided
         if (cloneDirectory == null) {
@@ -38,8 +40,19 @@ public class GitHubNavigatorExample {
             GitHubRepoNavigatorBuilder builder = GitHubRepoNavigatorBuilder
                 .forRepository(repositoryUrl)
                 .localCloneDirectory(cloneDirectory)
-                .branch(branch)
-                .fileFilters("*.java", "*.md");
+                .branch(branch);
+            
+            // Add file filters if provided, otherwise use default filters
+            if (fileFilter != null && !fileFilter.trim().isEmpty()) {
+                String[] filters = fileFilter.split(",");
+                for (int i = 0; i < filters.length; i++) {
+                    filters[i] = filters[i].trim();
+                }
+                builder.fileFilters(filters);
+                System.out.println("Using file filters: " + String.join(", ", filters));
+            } else {
+                System.out.println("No file filter specified");
+            }
             
             // Add authentication only if token is provided
             if (token != null && !token.trim().isEmpty()) {
