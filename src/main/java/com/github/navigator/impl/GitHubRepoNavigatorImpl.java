@@ -187,7 +187,7 @@ public class GitHubRepoNavigatorImpl implements GitHubRepoNavigator {
     return gitDir.exists() && gitDir.isDirectory();
   }
 
-  private void openExistingRepository(Path localPath) throws IOException, GitAPIException {
+  private void openExistingRepository(Path localPath) throws IOException, GitAPIException, AuthenticationException {
     var builder = new FileRepositoryBuilder();
     repository = builder.setGitDir(localPath.resolve(".git").toFile())
       .readEnvironment()
@@ -195,8 +195,59 @@ public class GitHubRepoNavigatorImpl implements GitHubRepoNavigator {
       .build();
 
     git = new Git(repository);
-
     logger.debug("Opened existing repository");
+
+    // Check for and pull new changes from remote
+    pullLatestChanges();
+  }
+
+  private void pullLatestChanges() throws GitAPIException, AuthenticationException {
+    try {
+      logger.debug("Checking for remote changes...");
+      
+      // First fetch to get latest remote refs
+      var fetchCommand = git.fetch();
+      if (config.getAuthConfig().isPresent()) {
+        fetchCommand.setCredentialsProvider(
+          authenticationManager.getCredentialsProvider(config.getAuthConfig().get())
+        );
+      }
+      fetchCommand.call();
+      
+      // Check if there are any new commits
+      var currentBranch = repository.getBranch();
+      var localRef = repository.findRef("HEAD");
+      var remoteRef = repository.findRef("refs/remotes/origin/" + currentBranch);
+      
+      if (localRef != null && remoteRef != null && 
+          !localRef.getObjectId().equals(remoteRef.getObjectId())) {
+        
+        logger.info("New changes detected on remote branch '{}', pulling changes...", currentBranch);
+        
+        // Pull the changes
+        var pullCommand = git.pull();
+        if (config.getAuthConfig().isPresent()) {
+          pullCommand.setCredentialsProvider(
+            authenticationManager.getCredentialsProvider(config.getAuthConfig().get())
+          );
+        }
+        var pullResult = pullCommand.call();
+        
+        if (pullResult.isSuccessful()) {
+          logger.info("Successfully pulled {} new commits from remote", 
+                     pullResult.getFetchResult().getTrackingRefUpdates().size());
+        } else {
+          logger.warn("Pull completed but may have conflicts. Merge result: {}", 
+                     pullResult.getMergeResult().getMergeStatus());
+        }
+      } else {
+        logger.debug("Repository is up to date with remote");
+      }
+      
+    } catch (IOException e) {
+      logger.warn("Failed to check for remote changes: {}", e.getMessage());
+      // Don't throw exception here as opening the repository should still succeed
+    }
   }
 
   private void cloneRepository(Path localPath) throws GitAPIException, AuthenticationException, IOException {
