@@ -2,6 +2,7 @@ package com.github.navigator.services.impl;
 
 import com.github.navigator.config.NavigatorConfig;
 import com.github.navigator.exceptions.RepositoryException;
+import com.github.navigator.model.CommitMetadata;
 import com.github.navigator.services.CommitNavigator;
 import com.github.navigator.services.FileChangeDetector;
 import org.eclipse.jgit.api.CheckoutCommand;
@@ -15,6 +16,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -41,7 +44,7 @@ public class CommitNavigatorImpl implements CommitNavigator {
     }
 
     @Override
-    public String next() throws RepositoryException {
+    public CommitMetadata next() throws RepositoryException {
         ensureInitialized();
         
         if (!hasNext()) {
@@ -51,11 +54,11 @@ public class CommitNavigatorImpl implements CommitNavigator {
         currentIndex++;
         RevCommit commit = filteredCommits.get(currentIndex);
         logger.debug("Navigated to next commit: {}", commit.getName());
-        return commit.getName();
+        return createCommitMetadata(commit);
     }
 
     @Override
-    public String previous() throws RepositoryException {
+    public CommitMetadata previous() throws RepositoryException {
         ensureInitialized();
         
         if (!hasPrevious()) {
@@ -65,25 +68,25 @@ public class CommitNavigatorImpl implements CommitNavigator {
         currentIndex--;
         RevCommit commit = filteredCommits.get(currentIndex);
         logger.debug("Navigated to previous commit: {}", commit.getName());
-        return commit.getName();
+        return createCommitMetadata(commit);
     }
 
     @Override
-    public String nextAndCheckout() throws RepositoryException {
-        String commitHash = next();
-        if (commitHash != null) {
-            checkout(commitHash);
+    public CommitMetadata nextAndCheckout() throws RepositoryException {
+        CommitMetadata commitMetadata = next();
+        if (commitMetadata != null) {
+            checkout(commitMetadata.getCommitHash());
         }
-        return commitHash;
+        return commitMetadata;
     }
 
     @Override
-    public String previousAndCheckout() throws RepositoryException {
-        String commitHash = previous();
-        if (commitHash != null) {
-            checkout(commitHash);
+    public CommitMetadata previousAndCheckout() throws RepositoryException {
+        CommitMetadata commitMetadata = previous();
+        if (commitMetadata != null) {
+            checkout(commitMetadata.getCommitHash());
         }
-        return commitHash;
+        return commitMetadata;
     }
 
     @Override
@@ -99,11 +102,11 @@ public class CommitNavigatorImpl implements CommitNavigator {
     }
 
     @Override
-    public String getCurrentCommit() throws RepositoryException {
+    public CommitMetadata getCurrentCommit() throws RepositoryException {
         ensureInitialized();
         
         if (currentIndex >= 0 && currentIndex < filteredCommits.size()) {
-            return filteredCommits.get(currentIndex).getName();
+            return createCommitMetadata(filteredCommits.get(currentIndex));
         }
         return null;
     }
@@ -205,5 +208,17 @@ public class CommitNavigatorImpl implements CommitNavigator {
         } catch (GitAPIException e) {
             throw new RepositoryException("Failed to checkout commit: " + commitHash, e);
         }
+    }
+    
+    private CommitMetadata createCommitMetadata(RevCommit commit) {
+        String commitHash = commit.getName();
+        String committerUsername = commit.getCommitterIdent().getName();
+        LocalDateTime commitDate = LocalDateTime.ofInstant(
+            commit.getCommitterIdent().getWhen().toInstant(), 
+            ZoneId.systemDefault()
+        );
+        String commitMessage = commit.getFullMessage();
+        
+        return new CommitMetadata(commitHash, committerUsername, commitDate, commitMessage);
     }
 }

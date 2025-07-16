@@ -2,6 +2,7 @@ package com.github.navigator.cli;
 
 import com.github.navigator.GitHubRepoNavigator;
 import com.github.navigator.GitHubRepoNavigatorBuilder;
+import com.github.navigator.model.CommitMetadata;
 import com.github.navigator.services.CommitNavigator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,17 +42,13 @@ public class GitHubNavigatorCli implements Callable<Integer> {
     
     @Override
     public Integer call() throws Exception {
-        System.out.println("GitHub Navigator CLI");
-        
         // Set default clone directory to system temp directory if not provided
         if (cloneDirectory == null) {
             String repoName = extractRepositoryName(repositoryUrl);
-            cloneDirectory = System.getProperty("java.io.tmpdir") + "/" + repoName;
-            System.out.println("Clone directory not specified, using: " + cloneDirectory);
-        } else {
-            System.out.println("Using specified clone directory: " + cloneDirectory);
+            cloneDirectory = System.getProperty("java.io.tmpdir") + repoName;
         }
-        
+        System.out.println("Clone directory: " + cloneDirectory + "\n");
+
         try {
             GitHubRepoNavigatorBuilder builder = GitHubRepoNavigatorBuilder
                 .forRepository(repositoryUrl)
@@ -65,17 +62,11 @@ public class GitHubNavigatorCli implements Callable<Integer> {
                     filters[i] = filters[i].trim();
                 }
                 builder.fileFilters(filters);
-                System.out.println("Using file filters: " + String.join(", ", filters));
-            } else {
-                System.out.println("No file filter specified");
             }
             
             // Add authentication only if token is provided
             if (token != null && !token.trim().isEmpty()) {
                 builder.withPersonalAccessToken(token);
-                System.out.println("Using provided personal access token for authentication");
-            } else {
-                System.out.println("No authentication token provided - accessing public repository");
             }
             
             GitHubRepoNavigator navigator = builder.build();
@@ -83,22 +74,14 @@ public class GitHubNavigatorCli implements Callable<Integer> {
             navigator.initialize();
             
             CommitNavigator commitNavigator = navigator.getCommitNavigator();
-            
-            logger.info("Starting commit navigation example");
-            
-            System.out.println("=== Forward Navigation (with checkout) ===");
-            while (commitNavigator.hasNext()) {
-                String commit = commitNavigator.next();
-                System.out.println("Checked out commit: " + commit);
-            }
-            
-            System.out.println("\n=== Backward Navigation (without checkout) ===");
+
             while (commitNavigator.hasPrevious()) {
-                String commit = commitNavigator.previous();
-                System.out.println("Previous commit: " + commit);
+                CommitMetadata commit = commitNavigator.previous();
+                System.out.println("commit " + commit.getCommitHash() +
+                                 " by " + commit.getCommitterUsername() + 
+                                 " on " + commit.getCommitDate() + "\n" +
+                                 "   " + commit.getCommitMessage().trim() + "\n");
             }
-            
-            System.out.println("\nCurrent commit: " + commitNavigator.getCurrentCommit());
             
             navigator.close();
             
