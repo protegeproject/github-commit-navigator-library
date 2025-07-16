@@ -25,16 +25,21 @@ public class GitHubNavigatorExample {
         String cloneDirectory = args.length > 2 ? args[2] : null;
         String token = args.length > 3 ? args[3] : null;
         
+        // Set default clone directory to system temp directory if not provided
+        if (cloneDirectory == null) {
+            String repoName = extractRepositoryName(repositoryUrl);
+            cloneDirectory = System.getProperty("java.io.tmpdir") + "/" + repoName;
+            System.out.println("Clone directory not specified, using: " + cloneDirectory);
+        } else {
+            System.out.println("Using specified clone directory: " + cloneDirectory);
+        }
+        
         try {
             GitHubRepoNavigatorBuilder builder = GitHubRepoNavigatorBuilder
                 .forRepository(repositoryUrl)
+                .localCloneDirectory(cloneDirectory)
                 .branch(branch)
                 .fileFilters("*.java", "*.md");
-            
-            // Set clone directory if provided
-            if (cloneDirectory != null) {
-                builder.localCloneDirectory(cloneDirectory);
-            }
             
             // Add authentication only if token is provided
             if (token != null && !token.trim().isEmpty()) {
@@ -72,5 +77,14 @@ public class GitHubNavigatorExample {
             logger.error("Error during navigation", e);
             System.exit(1);
         }
+    }
+    
+    private static String extractRepositoryName(String repositoryUrl) {
+        String[] parts = repositoryUrl.split("/");
+        String repoName = parts[parts.length - 1];
+        if (repoName.endsWith(".git")) {
+            repoName = repoName.substring(0, repoName.length() - 4);
+        }
+        return repoName;
     }
 }
