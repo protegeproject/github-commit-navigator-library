@@ -1,31 +1,47 @@
-package com.github.navigator.examples;
+package com.github.navigator.cli;
 
 import com.github.navigator.GitHubRepoNavigator;
 import com.github.navigator.GitHubRepoNavigatorBuilder;
 import com.github.navigator.services.CommitNavigator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 
-public class GitHubNavigatorExample {
-    private static final Logger logger = LoggerFactory.getLogger(GitHubNavigatorExample.class);
+import java.util.concurrent.Callable;
+
+@Command(name = "github-navigator", 
+         description = "Navigate GitHub repository commits programmatically",
+         mixinStandardHelpOptions = true,
+         version = "1.0.0")
+public class GitHubNavigatorCli implements Callable<Integer> {
+    private static final Logger logger = LoggerFactory.getLogger(GitHubNavigatorCli.class);
+    
+    @Parameters(index = "0", description = "The GitHub repository URL (e.g., https://github.com/user/repo.git)")
+    private String repositoryUrl;
+    
+    @Option(names = {"-b", "--branch"}, description = "The branch to use (default: ${DEFAULT-VALUE})", defaultValue = "main")
+    private String branch;
+    
+    @Option(names = {"-d", "--clone-directory"}, description = "Local directory path where the repository will be cloned (defaults to temp directory)")
+    private String cloneDirectory;
+    
+    @Option(names = {"-f", "--file-filter"}, description = "File filter pattern (e.g., '*.java' or '*.java,*.md' for multiple filters)")
+    private String fileFilter;
+    
+    @Option(names = {"-t", "--token"}, description = "GitHub personal access token for private repositories")
+    private String token;
     
     public static void main(String[] args) {
-        System.out.println("GitHub Navigator Example");
-        if (args.length < 1) {
-            System.err.println("Usage: java GitHubNavigatorExample <repository-url> [branch] [clone-directory] [file-filter] [personal-access-token]");
-            System.err.println("  repository-url: The GitHub repository URL (e.g., https://github.com/user/repo.git)");
-            System.err.println("  branch: The branch to use (defaults to 'main' if not specified)");
-            System.err.println("  clone-directory: Local directory path where the repository will be cloned (defaults to temp directory)");
-            System.err.println("  file-filter: File filter pattern (e.g., '*.java' or '*.java,*.md' for multiple filters)");
-            System.err.println("  personal-access-token: Optional GitHub personal access token for private repositories");
-            System.exit(1);
-        }
-        
-        String repositoryUrl = args[0];
-        String branch = args.length > 1 ? args[1] : "main";
-        String cloneDirectory = args.length > 2 ? args[2] : null;
-        String fileFilter = args.length > 3 ? args[3] : null;
-        String token = args.length > 4 ? args[4] : null;
+        int exitCode = new CommandLine(new GitHubNavigatorCli()).execute(args);
+        System.exit(exitCode);
+    }
+    
+    @Override
+    public Integer call() throws Exception {
+        System.out.println("GitHub Navigator CLI");
         
         // Set default clone directory to system temp directory if not provided
         if (cloneDirectory == null) {
@@ -86,9 +102,12 @@ public class GitHubNavigatorExample {
             
             navigator.close();
             
+            return 0; // Success
+            
         } catch (Exception e) {
             logger.error("Error during navigation", e);
-            System.exit(1);
+            System.err.println("Error: " + e.getMessage());
+            return 1; // Error
         }
     }
     
