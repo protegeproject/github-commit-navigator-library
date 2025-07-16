@@ -9,19 +9,15 @@ import com.github.navigator.services.AuthenticationManager;
 import com.github.navigator.services.CommitNavigator;
 import com.github.navigator.services.FileChangeDetector;
 import com.github.navigator.services.impl.CommitNavigatorImpl;
-import org.eclipse.jgit.api.CloneCommand;
-import org.eclipse.jgit.api.FetchCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
-import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -154,7 +150,7 @@ public class GitHubRepoNavigatorImpl implements GitHubRepoNavigator {
     }
   }
 
-  private void createCommitNavigator() throws RepositoryException {
+  private void createCommitNavigator() {
     logger.debug("Creating commit navigator");
     commitNavigator = new CommitNavigatorImpl(repository, git, config, fileChangeDetector);
   }

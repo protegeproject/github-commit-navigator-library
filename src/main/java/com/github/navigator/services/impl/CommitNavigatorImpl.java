@@ -5,7 +5,6 @@ import com.github.navigator.exceptions.RepositoryException;
 import com.github.navigator.model.CommitMetadata;
 import com.github.navigator.services.CommitNavigator;
 import com.github.navigator.services.FileChangeDetector;
-import org.eclipse.jgit.api.CheckoutCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;
@@ -19,7 +18,6 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 public class CommitNavigatorImpl implements CommitNavigator {
