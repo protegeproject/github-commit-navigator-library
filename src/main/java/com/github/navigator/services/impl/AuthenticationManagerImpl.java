@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Singleton;
 import java.io.IOException;
-import java.util.Objects;
 import java.util.Optional;
 
 @Singleton
@@ -34,21 +33,13 @@ public class AuthenticationManagerImpl implements AuthenticationManager {
     
     try {
       var builder = new GitHubBuilder();
-      
-      switch (config.getType()) {
-        case PERSONAL_ACCESS_TOKEN:
-        case OAUTH:
-          return builder.withOAuthToken(config.getToken()).build();
-          
-        case USERNAME_PASSWORD:
-          return builder.withPassword(config.getUsername(), config.getPassword()).build();
-          
-        case SSH_KEY:
-          throw new AuthenticationException("SSH key authentication not supported for GitHub API");
-          
-        default:
-          throw new AuthenticationException("Unsupported authentication type: " + config.getType());
-      }
+
+      return switch (config.getType()) {
+        case PERSONAL_ACCESS_TOKEN, OAUTH -> builder.withOAuthToken(config.getToken()).build();
+        case USERNAME_PASSWORD -> builder.withPassword(config.getUsername(), config.getPassword()).build();
+        case SSH_KEY -> throw new AuthenticationException("SSH key authentication not supported for GitHub API");
+        default -> throw new AuthenticationException("Unsupported authentication type: " + config.getType());
+      };
     } catch (IOException e) {
       throw new AuthenticationException("Failed to authenticate with GitHub", e);
     }
@@ -62,21 +53,13 @@ public class AuthenticationManagerImpl implements AuthenticationManager {
     }
     
     logger.debug("Creating credentials provider for {}", config.getType());
-    
-    switch (config.getType()) {
-      case PERSONAL_ACCESS_TOKEN:
-      case OAUTH:
-        return new UsernamePasswordCredentialsProvider(config.getToken(), "");
-        
-      case USERNAME_PASSWORD:
-        return new UsernamePasswordCredentialsProvider(config.getUsername(), config.getPassword());
-        
-      case SSH_KEY:
-        throw new AuthenticationException("SSH key authentication not yet implemented");
-        
-      default:
-        throw new AuthenticationException("Unsupported authentication type: " + config.getType());
-    }
+
+    return switch (config.getType()) {
+      case PERSONAL_ACCESS_TOKEN, OAUTH -> new UsernamePasswordCredentialsProvider(config.getToken(), "");
+      case USERNAME_PASSWORD -> new UsernamePasswordCredentialsProvider(config.getUsername(), config.getPassword());
+      case SSH_KEY -> throw new AuthenticationException("SSH key authentication not yet implemented");
+      default -> throw new AuthenticationException("Unsupported authentication type: " + config.getType());
+    };
   }
 
   @Override
