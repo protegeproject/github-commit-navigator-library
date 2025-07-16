@@ -7,6 +7,6 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import java.util.List;
 
 public interface FileChangeDetector {
-    boolean hasFileChanges(Repository repository, RevCommit commit, List<String> fileFilters) throws RepositoryException;
-    List<String> getChangedFiles(Repository repository, RevCommit commit) throws RepositoryException;
+  boolean hasFileChanges(Repository repository, RevCommit commit, List<String> fileFilters) throws RepositoryException;
+  List<String> getChangedFiles(Repository repository, RevCommit commit) throws RepositoryException;
 }

@@ -23,202 +23,202 @@ import java.util.Iterator;
 import java.util.List;
 
 public class CommitNavigatorImpl implements CommitNavigator {
-    private static final Logger logger = LoggerFactory.getLogger(CommitNavigatorImpl.class);
+  private static final Logger logger = LoggerFactory.getLogger(CommitNavigatorImpl.class);
 
-    private final Repository repository;
-    private final Git git;
-    private final NavigatorConfig config;
-    private final FileChangeDetector fileChangeDetector;
-    
-    private List<RevCommit> filteredCommits;
-    private int currentIndex;
-    private boolean initialized = false;
+  private final Repository repository;
+  private final Git git;
+  private final NavigatorConfig config;
+  private final FileChangeDetector fileChangeDetector;
 
-    @Inject
-    public CommitNavigatorImpl(Repository repository, Git git, NavigatorConfig config, FileChangeDetector fileChangeDetector) {
-        this.repository = repository;
-        this.git = git;
-        this.config = config;
-        this.fileChangeDetector = fileChangeDetector;
-        this.currentIndex = -1;
+  private List<RevCommit> filteredCommits;
+  private int currentIndex;
+  private boolean initialized = false;
+
+  @Inject
+  public CommitNavigatorImpl(Repository repository, Git git, NavigatorConfig config, FileChangeDetector fileChangeDetector) {
+    this.repository = repository;
+    this.git = git;
+    this.config = config;
+    this.fileChangeDetector = fileChangeDetector;
+    this.currentIndex = -1;
+  }
+
+  @Override
+  public CommitMetadata next() throws RepositoryException {
+    ensureInitialized();
+
+    if (!hasNext()) {
+      return null;
     }
 
-    @Override
-    public CommitMetadata next() throws RepositoryException {
-        ensureInitialized();
-        
-        if (!hasNext()) {
-            return null;
+    currentIndex++;
+    RevCommit commit = filteredCommits.get(currentIndex);
+    logger.debug("Navigated to next commit: {}", commit.getName());
+    return createCommitMetadata(commit);
+  }
+
+  @Override
+  public CommitMetadata previous() throws RepositoryException {
+    ensureInitialized();
+
+    if (!hasPrevious()) {
+      return null;
+    }
+
+    currentIndex--;
+    RevCommit commit = filteredCommits.get(currentIndex);
+    logger.debug("Navigated to previous commit: {}", commit.getName());
+    return createCommitMetadata(commit);
+  }
+
+  @Override
+  public CommitMetadata nextAndCheckout() throws RepositoryException {
+    CommitMetadata commitMetadata = next();
+    if (commitMetadata != null) {
+      checkout(commitMetadata.getCommitHash());
+    }
+    return commitMetadata;
+  }
+
+  @Override
+  public CommitMetadata previousAndCheckout() throws RepositoryException {
+    CommitMetadata commitMetadata = previous();
+    if (commitMetadata != null) {
+      checkout(commitMetadata.getCommitHash());
+    }
+    return commitMetadata;
+  }
+
+  @Override
+  public boolean hasNext() throws RepositoryException {
+    ensureInitialized();
+    return currentIndex < filteredCommits.size() - 1;
+  }
+
+  @Override
+  public boolean hasPrevious() throws RepositoryException {
+    ensureInitialized();
+    return currentIndex > 0;
+  }
+
+  @Override
+  public CommitMetadata getCurrentCommit() throws RepositoryException {
+    ensureInitialized();
+
+    if (currentIndex >= 0 && currentIndex < filteredCommits.size()) {
+      return createCommitMetadata(filteredCommits.get(currentIndex));
+    }
+    return null;
+  }
+
+  @Override
+  public void reset() throws RepositoryException {
+    logger.debug("Resetting commit navigator");
+    initialized = false;
+    filteredCommits = null;
+    currentIndex = -1;
+  }
+
+  private void ensureInitialized() throws RepositoryException {
+    if (!initialized) {
+      initialize();
+    }
+  }
+
+  private void initialize() throws RepositoryException {
+    logger.debug("Initializing commit navigator");
+
+    try {
+      filteredCommits = buildFilteredCommitList();
+
+      if (config.getStartingCommit().isPresent()) {
+        String startingCommit = config.getStartingCommit().get();
+        currentIndex = findCommitIndex(startingCommit);
+        if (currentIndex == -1) {
+          throw new RepositoryException("Starting commit not found: " + startingCommit);
         }
-        
-        currentIndex++;
-        RevCommit commit = filteredCommits.get(currentIndex);
-        logger.debug("Navigated to next commit: {}", commit.getName());
-        return createCommitMetadata(commit);
-    }
+      } else {
+        currentIndex = filteredCommits.size() - 1;
+      }
 
-    @Override
-    public CommitMetadata previous() throws RepositoryException {
-        ensureInitialized();
-        
-        if (!hasPrevious()) {
-            return null;
+      initialized = true;
+      logger.debug("Navigator initialized with {} filtered commits, starting at index {}",
+        filteredCommits.size(), currentIndex);
+
+    } catch (Exception e) {
+      throw new RepositoryException("Failed to initialize commit navigator", e);
+    }
+  }
+
+  private List<RevCommit> buildFilteredCommitList() throws RepositoryException {
+    logger.debug("Building filtered commit list");
+
+    try (RevWalk revWalk = new RevWalk(repository)) {
+      revWalk.markStart(revWalk.parseCommit(repository.resolve("HEAD")));
+
+      List<RevCommit> commits = new ArrayList<>();
+      Iterator<RevCommit> iterator = revWalk.iterator();
+
+      while (iterator.hasNext()) {
+        RevCommit commit = iterator.next();
+
+        if (shouldIncludeCommit(commit)) {
+          commits.add(commit);
         }
-        
-        currentIndex--;
-        RevCommit commit = filteredCommits.get(currentIndex);
-        logger.debug("Navigated to previous commit: {}", commit.getName());
-        return createCommitMetadata(commit);
+      }
+
+      commits.sort((c1, c2) -> c1.getCommitTime() - c2.getCommitTime());
+
+      return commits;
+
+    } catch (IOException e) {
+      throw new RepositoryException("Failed to build commit list", e);
+    }
+  }
+
+  private boolean shouldIncludeCommit(RevCommit commit) throws RepositoryException {
+    List<String> fileFilters = config.getFileFilters();
+
+    if (fileFilters == null || fileFilters.isEmpty()) {
+      return true;
     }
 
-    @Override
-    public CommitMetadata nextAndCheckout() throws RepositoryException {
-        CommitMetadata commitMetadata = next();
-        if (commitMetadata != null) {
-            checkout(commitMetadata.getCommitHash());
-        }
-        return commitMetadata;
-    }
+    return fileChangeDetector.hasFileChanges(repository, commit, fileFilters);
+  }
 
-    @Override
-    public CommitMetadata previousAndCheckout() throws RepositoryException {
-        CommitMetadata commitMetadata = previous();
-        if (commitMetadata != null) {
-            checkout(commitMetadata.getCommitHash());
-        }
-        return commitMetadata;
+  private int findCommitIndex(String commitHash) {
+    for (int i = 0; i < filteredCommits.size(); i++) {
+      if (filteredCommits.get(i).getName().equals(commitHash)) {
+        return i;
+      }
     }
+    return -1;
+  }
 
-    @Override
-    public boolean hasNext() throws RepositoryException {
-        ensureInitialized();
-        return currentIndex < filteredCommits.size() - 1;
-    }
+  private void checkout(String commitHash) throws RepositoryException {
+    logger.debug("Checking out commit: {}", commitHash);
 
-    @Override
-    public boolean hasPrevious() throws RepositoryException {
-        ensureInitialized();
-        return currentIndex > 0;
-    }
+    try {
+      CheckoutCommand checkout = git.checkout();
+      checkout.setName(commitHash);
+      checkout.call();
 
-    @Override
-    public CommitMetadata getCurrentCommit() throws RepositoryException {
-        ensureInitialized();
-        
-        if (currentIndex >= 0 && currentIndex < filteredCommits.size()) {
-            return createCommitMetadata(filteredCommits.get(currentIndex));
-        }
-        return null;
-    }
+      logger.debug("Successfully checked out commit: {}", commitHash);
 
-    @Override
-    public void reset() throws RepositoryException {
-        logger.debug("Resetting commit navigator");
-        initialized = false;
-        filteredCommits = null;
-        currentIndex = -1;
+    } catch (GitAPIException e) {
+      throw new RepositoryException("Failed to checkout commit: " + commitHash, e);
     }
+  }
 
-    private void ensureInitialized() throws RepositoryException {
-        if (!initialized) {
-            initialize();
-        }
-    }
+  private CommitMetadata createCommitMetadata(RevCommit commit) {
+    String commitHash = commit.getName();
+    String committerUsername = commit.getCommitterIdent().getName();
+    LocalDateTime commitDate = LocalDateTime.ofInstant(
+      commit.getCommitterIdent().getWhen().toInstant(),
+      ZoneId.systemDefault()
+    );
+    String commitMessage = commit.getFullMessage();
 
-    private void initialize() throws RepositoryException {
-        logger.debug("Initializing commit navigator");
-        
-        try {
-            filteredCommits = buildFilteredCommitList();
-            
-            if (config.getStartingCommit().isPresent()) {
-                String startingCommit = config.getStartingCommit().get();
-                currentIndex = findCommitIndex(startingCommit);
-                if (currentIndex == -1) {
-                    throw new RepositoryException("Starting commit not found: " + startingCommit);
-                }
-            } else {
-                currentIndex = filteredCommits.size() - 1;
-            }
-            
-            initialized = true;
-            logger.debug("Navigator initialized with {} filtered commits, starting at index {}", 
-                        filteredCommits.size(), currentIndex);
-            
-        } catch (Exception e) {
-            throw new RepositoryException("Failed to initialize commit navigator", e);
-        }
-    }
-
-    private List<RevCommit> buildFilteredCommitList() throws RepositoryException {
-        logger.debug("Building filtered commit list");
-        
-        try (RevWalk revWalk = new RevWalk(repository)) {
-            revWalk.markStart(revWalk.parseCommit(repository.resolve("HEAD")));
-            
-            List<RevCommit> commits = new ArrayList<>();
-            Iterator<RevCommit> iterator = revWalk.iterator();
-            
-            while (iterator.hasNext()) {
-                RevCommit commit = iterator.next();
-                
-                if (shouldIncludeCommit(commit)) {
-                    commits.add(commit);
-                }
-            }
-            
-            commits.sort((c1, c2) -> c1.getCommitTime() - c2.getCommitTime());
-            
-            return commits;
-            
-        } catch (IOException e) {
-            throw new RepositoryException("Failed to build commit list", e);
-        }
-    }
-
-    private boolean shouldIncludeCommit(RevCommit commit) throws RepositoryException {
-        List<String> fileFilters = config.getFileFilters();
-        
-        if (fileFilters == null || fileFilters.isEmpty()) {
-            return true;
-        }
-        
-        return fileChangeDetector.hasFileChanges(repository, commit, fileFilters);
-    }
-
-    private int findCommitIndex(String commitHash) {
-        for (int i = 0; i < filteredCommits.size(); i++) {
-            if (filteredCommits.get(i).getName().equals(commitHash)) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    private void checkout(String commitHash) throws RepositoryException {
-        logger.debug("Checking out commit: {}", commitHash);
-        
-        try {
-            CheckoutCommand checkout = git.checkout();
-            checkout.setName(commitHash);
-            checkout.call();
-            
-            logger.debug("Successfully checked out commit: {}", commitHash);
-            
-        } catch (GitAPIException e) {
-            throw new RepositoryException("Failed to checkout commit: " + commitHash, e);
-        }
-    }
-    
-    private CommitMetadata createCommitMetadata(RevCommit commit) {
-        String commitHash = commit.getName();
-        String committerUsername = commit.getCommitterIdent().getName();
-        LocalDateTime commitDate = LocalDateTime.ofInstant(
-            commit.getCommitterIdent().getWhen().toInstant(), 
-            ZoneId.systemDefault()
-        );
-        String commitMessage = commit.getFullMessage();
-        
-        return CommitMetadata.create(commitHash, committerUsername, commitDate, commitMessage);
-    }
+    return CommitMetadata.create(commitHash, committerUsername, commitDate, commitMessage);
+  }
 }

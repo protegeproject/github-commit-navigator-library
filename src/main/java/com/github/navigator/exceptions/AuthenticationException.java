@@ -1,11 +1,11 @@
 package com.github.navigator.exceptions;
 
 public class AuthenticationException extends GitHubNavigatorException {
-    public AuthenticationException(String message) {
-        super(message);
-    }
+  public AuthenticationException(String message) {
+    super(message);
+  }
 
-    public AuthenticationException(String message, Throwable cause) {
-        super(message, cause);
-    }
+  public AuthenticationException(String message, Throwable cause) {
+    super(message, cause);
+  }
 }
