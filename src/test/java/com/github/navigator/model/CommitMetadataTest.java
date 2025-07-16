@@ -14,7 +14,7 @@ class CommitMetadataTest {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
         
-        CommitMetadata original = new CommitMetadata(
+        CommitMetadata original = CommitMetadata.create(
             "abc123",
             "testuser",
             LocalDateTime.of(2023, 1, 1, 12, 0, 0),
@@ -37,14 +37,14 @@ class CommitMetadataTest {
     
     @Test
     void testEqualsAndHashCode() {
-        CommitMetadata commit1 = new CommitMetadata(
+        CommitMetadata commit1 = CommitMetadata.create(
             "abc123",
             "testuser",
             LocalDateTime.of(2023, 1, 1, 12, 0, 0),
             "Test commit message"
         );
         
-        CommitMetadata commit2 = new CommitMetadata(
+        CommitMetadata commit2 = CommitMetadata.create(
             "abc123",
             "testuser",
             LocalDateTime.of(2023, 1, 1, 12, 0, 0),

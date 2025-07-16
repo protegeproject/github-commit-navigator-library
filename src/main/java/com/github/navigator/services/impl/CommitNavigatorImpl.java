@@ -219,6 +219,6 @@ public class CommitNavigatorImpl implements CommitNavigator {
         );
         String commitMessage = commit.getFullMessage();
         
-        return new CommitMetadata(commitHash, committerUsername, commitDate, commitMessage);
+        return CommitMetadata.create(commitHash, committerUsername, commitDate, commitMessage);
     }
 }
