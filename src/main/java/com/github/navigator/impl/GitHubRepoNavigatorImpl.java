@@ -21,6 +21,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
 
 public class GitHubRepoNavigatorImpl implements GitHubRepoNavigator {
   private static final Logger logger = LoggerFactory.getLogger(GitHubRepoNavigatorImpl.class);
@@ -39,9 +40,9 @@ public class GitHubRepoNavigatorImpl implements GitHubRepoNavigator {
   public GitHubRepoNavigatorImpl(NavigatorConfig config,
                                  AuthenticationManager authenticationManager,
                                  FileChangeDetector fileChangeDetector) {
-    this.config = config;
-    this.authenticationManager = authenticationManager;
-    this.fileChangeDetector = fileChangeDetector;
+    this.config = Objects.requireNonNull(config, "NavigatorConfig cannot be null");
+    this.authenticationManager = Objects.requireNonNull(authenticationManager, "AuthenticationManager cannot be null");
+    this.fileChangeDetector = Objects.requireNonNull(fileChangeDetector, "FileChangeDetector cannot be null");
   }
 
   @Override

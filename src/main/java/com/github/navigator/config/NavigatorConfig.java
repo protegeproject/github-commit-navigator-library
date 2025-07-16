@@ -66,7 +66,7 @@ public class NavigatorConfig {
     private AuthenticationConfig authConfig;
 
     private Builder(String repositoryUrl) {
-      this.repositoryUrl = repositoryUrl;
+      this.repositoryUrl = Objects.requireNonNull(repositoryUrl, "Repository URL cannot be null");
     }
 
     public Builder localCloneDirectory(Path localCloneDirectory) {

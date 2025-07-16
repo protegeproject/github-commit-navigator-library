@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class CommitNavigatorImpl implements CommitNavigator {
   private static final Logger logger = LoggerFactory.getLogger(CommitNavigatorImpl.class);
@@ -34,10 +35,10 @@ public class CommitNavigatorImpl implements CommitNavigator {
 
   @Inject
   public CommitNavigatorImpl(Repository repository, Git git, NavigatorConfig config, FileChangeDetector fileChangeDetector) {
-    this.repository = repository;
-    this.git = git;
-    this.config = config;
-    this.fileChangeDetector = fileChangeDetector;
+    this.repository = Objects.requireNonNull(repository, "Repository cannot be null");
+    this.git = Objects.requireNonNull(git, "Git cannot be null");
+    this.config = Objects.requireNonNull(config, "NavigatorConfig cannot be null");
+    this.fileChangeDetector = Objects.requireNonNull(fileChangeDetector, "FileChangeDetector cannot be null");
     this.currentIndex = -1;
   }
 
