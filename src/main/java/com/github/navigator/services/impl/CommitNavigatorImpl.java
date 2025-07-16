@@ -156,11 +156,8 @@ public class CommitNavigatorImpl implements CommitNavigator {
       revWalk.markStart(revWalk.parseCommit(repository.resolve("HEAD")));
 
       var commits = new ArrayList<RevCommit>();
-      var iterator = revWalk.iterator();
 
-      while (iterator.hasNext()) {
-        var commit = iterator.next();
-
+      for (RevCommit commit : revWalk) {
         if (shouldIncludeCommit(commit)) {
           commits.add(commit);
         }
