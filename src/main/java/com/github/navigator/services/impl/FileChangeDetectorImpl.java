@@ -10,6 +10,7 @@ import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.AbstractTreeIterator;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
+import org.eclipse.jgit.treewalk.EmptyTreeIterator;
 import org.eclipse.jgit.util.io.DisabledOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -120,8 +121,6 @@ public class FileChangeDetectorImpl implements FileChangeDetector {
     }
 
     private AbstractTreeIterator getEmptyTreeIterator(Repository repository) throws IOException {
-        CanonicalTreeParser treeParser = new CanonicalTreeParser();
-        treeParser.reset(repository.newObjectReader(), null);
-        return treeParser;
+        return new EmptyTreeIterator();
     }
 }
