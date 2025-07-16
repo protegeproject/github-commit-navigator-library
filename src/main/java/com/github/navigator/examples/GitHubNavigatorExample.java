@@ -11,24 +11,30 @@ public class GitHubNavigatorExample {
     
     public static void main(String[] args) {
         System.out.println("GitHub Navigator Example");
-        if (args.length < 2) {
-            System.err.println("Usage: java GitHubNavigatorExample <repository-url> <clone-directory> [personal-access-token]");
+        if (args.length < 1) {
+            System.err.println("Usage: java GitHubNavigatorExample <repository-url> [branch] [clone-directory] [personal-access-token]");
             System.err.println("  repository-url: The GitHub repository URL (e.g., https://github.com/user/repo.git)");
-            System.err.println("  clone-directory: Local directory path where the repository will be cloned");
+            System.err.println("  branch: The branch to use (defaults to 'main' if not specified)");
+            System.err.println("  clone-directory: Local directory path where the repository will be cloned (defaults to temp directory)");
             System.err.println("  personal-access-token: Optional GitHub personal access token for private repositories");
             System.exit(1);
         }
         
         String repositoryUrl = args[0];
-        String cloneDirectory = args[1];
-        String token = args.length > 2 ? args[2] : null;
+        String branch = args.length > 1 ? args[1] : "main";
+        String cloneDirectory = args.length > 2 ? args[2] : null;
+        String token = args.length > 3 ? args[3] : null;
         
         try {
             GitHubRepoNavigatorBuilder builder = GitHubRepoNavigatorBuilder
                 .forRepository(repositoryUrl)
-                .localCloneDirectory(cloneDirectory)
-                .branch("main")
+                .branch(branch)
                 .fileFilters("*.java", "*.md");
+            
+            // Set clone directory if provided
+            if (cloneDirectory != null) {
+                builder.localCloneDirectory(cloneDirectory);
+            }
             
             // Add authentication only if token is provided
             if (token != null && !token.trim().isEmpty()) {
