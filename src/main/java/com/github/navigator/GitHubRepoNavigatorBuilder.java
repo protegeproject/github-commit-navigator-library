@@ -82,7 +82,7 @@ public class GitHubRepoNavigatorBuilder {
    * @return A configured GitHubRepoNavigator instance
    */
   public GitHubRepoNavigator build() {
-    NavigatorConfig config = configBuilder.build();
+    var config = configBuilder.build();
     return GitHubRepoNavigatorFactory.create(config);
   }
 }

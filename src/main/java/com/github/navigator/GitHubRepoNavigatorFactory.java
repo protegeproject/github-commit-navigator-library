@@ -10,8 +10,8 @@ import com.github.navigator.services.impl.FileChangeDetectorImpl;
 public class GitHubRepoNavigatorFactory {
 
   public static GitHubRepoNavigator create(NavigatorConfig config) {
-    AuthenticationManager authManager = new AuthenticationManagerImpl();
-    FileChangeDetector fileChangeDetector = new FileChangeDetectorImpl();
+    var authManager = new AuthenticationManagerImpl();
+    var fileChangeDetector = new FileChangeDetectorImpl();
     return new GitHubRepoNavigatorImpl(config, authManager, fileChangeDetector);
   }
 

@@ -36,7 +36,7 @@ public class GitHubNavigatorCli implements Callable<Integer> {
   private String token;
 
   public static void main(String[] args) {
-    int exitCode = new CommandLine(new GitHubNavigatorCli()).execute(args);
+    var exitCode = new CommandLine(new GitHubNavigatorCli()).execute(args);
     System.exit(exitCode);
   }
 
@@ -44,20 +44,20 @@ public class GitHubNavigatorCli implements Callable<Integer> {
   public Integer call() throws Exception {
     // Set default clone directory to system temp directory if not provided
     if (cloneDirectory == null) {
-      String repoName = extractRepositoryName(repositoryUrl);
+      var repoName = extractRepositoryName(repositoryUrl);
       cloneDirectory = System.getProperty("java.io.tmpdir") + repoName;
     }
     System.out.println("Clone directory: " + cloneDirectory + "\n");
 
     try {
-      GitHubRepoNavigatorBuilder builder = GitHubRepoNavigatorBuilder
+      var builder = GitHubRepoNavigatorBuilder
         .forRepository(repositoryUrl)
         .localCloneDirectory(cloneDirectory)
         .branch(branch);
 
       // Add file filters if provided, otherwise use default filters
       if (fileFilter != null && !fileFilter.trim().isEmpty()) {
-        String[] filters = fileFilter.split(",");
+        var filters = fileFilter.split(",");
         for (int i = 0; i < filters.length; i++) {
           filters[i] = filters[i].trim();
         }
@@ -69,14 +69,14 @@ public class GitHubNavigatorCli implements Callable<Integer> {
         builder.withPersonalAccessToken(token);
       }
 
-      GitHubRepoNavigator navigator = builder.build();
+      var navigator = builder.build();
 
       navigator.initialize();
 
-      CommitNavigator commitNavigator = navigator.getCommitNavigator();
+      var commitNavigator = navigator.getCommitNavigator();
 
       while (commitNavigator.hasPrevious()) {
-        CommitMetadata commit = commitNavigator.previous();
+        var commit = commitNavigator.previous();
         System.out.println("commit " + commit.getCommitHash() +
           " by " + commit.getCommitterUsername() +
           " on " + commit.getCommitDate() + "\n" +
@@ -95,8 +95,8 @@ public class GitHubNavigatorCli implements Callable<Integer> {
   }
 
   private static String extractRepositoryName(String repositoryUrl) {
-    String[] parts = repositoryUrl.split("/");
-    String repoName = parts[parts.length - 1];
+    var parts = repositoryUrl.split("/");
+    var repoName = parts[parts.length - 1];
     if (repoName.endsWith(".git")) {
       repoName = repoName.substring(0, repoName.length() - 4);
     }

@@ -52,7 +52,7 @@ public class CommitNavigatorImpl implements CommitNavigator {
     }
 
     currentIndex++;
-    RevCommit commit = filteredCommits.get(currentIndex);
+    var commit = filteredCommits.get(currentIndex);
     logger.debug("Navigated to next commit: {}", commit.getName());
     return createCommitMetadata(commit);
   }
@@ -66,14 +66,14 @@ public class CommitNavigatorImpl implements CommitNavigator {
     }
 
     currentIndex--;
-    RevCommit commit = filteredCommits.get(currentIndex);
+    var commit = filteredCommits.get(currentIndex);
     logger.debug("Navigated to previous commit: {}", commit.getName());
     return createCommitMetadata(commit);
   }
 
   @Override
   public CommitMetadata nextAndCheckout() throws RepositoryException {
-    CommitMetadata commitMetadata = next();
+    var commitMetadata = next();
     if (commitMetadata != null) {
       checkout(commitMetadata.getCommitHash());
     }
@@ -82,7 +82,7 @@ public class CommitNavigatorImpl implements CommitNavigator {
 
   @Override
   public CommitMetadata previousAndCheckout() throws RepositoryException {
-    CommitMetadata commitMetadata = previous();
+    var commitMetadata = previous();
     if (commitMetadata != null) {
       checkout(commitMetadata.getCommitHash());
     }
@@ -132,7 +132,7 @@ public class CommitNavigatorImpl implements CommitNavigator {
       filteredCommits = buildFilteredCommitList();
 
       if (config.getStartingCommit().isPresent()) {
-        String startingCommit = config.getStartingCommit().get();
+        var startingCommit = config.getStartingCommit().get();
         currentIndex = findCommitIndex(startingCommit);
         if (currentIndex == -1) {
           throw new RepositoryException("Starting commit not found: " + startingCommit);
@@ -156,11 +156,11 @@ public class CommitNavigatorImpl implements CommitNavigator {
     try (RevWalk revWalk = new RevWalk(repository)) {
       revWalk.markStart(revWalk.parseCommit(repository.resolve("HEAD")));
 
-      List<RevCommit> commits = new ArrayList<>();
-      Iterator<RevCommit> iterator = revWalk.iterator();
+      var commits = new ArrayList<RevCommit>();
+      var iterator = revWalk.iterator();
 
       while (iterator.hasNext()) {
-        RevCommit commit = iterator.next();
+        var commit = iterator.next();
 
         if (shouldIncludeCommit(commit)) {
           commits.add(commit);
@@ -177,7 +177,7 @@ public class CommitNavigatorImpl implements CommitNavigator {
   }
 
   private boolean shouldIncludeCommit(RevCommit commit) throws RepositoryException {
-    List<String> fileFilters = config.getFileFilters();
+    var fileFilters = config.getFileFilters();
 
     if (fileFilters == null || fileFilters.isEmpty()) {
       return true;
@@ -199,7 +199,7 @@ public class CommitNavigatorImpl implements CommitNavigator {
     logger.debug("Checking out commit: {}", commitHash);
 
     try {
-      CheckoutCommand checkout = git.checkout();
+      var checkout = git.checkout();
       checkout.setName(commitHash);
       checkout.call();
 
@@ -211,13 +211,13 @@ public class CommitNavigatorImpl implements CommitNavigator {
   }
 
   private CommitMetadata createCommitMetadata(RevCommit commit) {
-    String commitHash = commit.getName();
-    String committerUsername = commit.getCommitterIdent().getName();
-    LocalDateTime commitDate = LocalDateTime.ofInstant(
+    var commitHash = commit.getName();
+    var committerUsername = commit.getCommitterIdent().getName();
+    var commitDate = LocalDateTime.ofInstant(
       commit.getCommitterIdent().getWhen().toInstant(),
       ZoneId.systemDefault()
     );
-    String commitMessage = commit.getFullMessage();
+    var commitMessage = commit.getFullMessage();
 
     return CommitMetadata.create(commitHash, committerUsername, commitDate, commitMessage);
   }

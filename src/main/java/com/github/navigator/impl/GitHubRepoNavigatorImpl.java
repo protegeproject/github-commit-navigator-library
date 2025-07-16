@@ -80,7 +80,7 @@ public class GitHubRepoNavigatorImpl implements GitHubRepoNavigator {
     logger.debug("Fetching latest changes from remote repository");
 
     try {
-      FetchCommand fetchCommand = git.fetch();
+      var fetchCommand = git.fetch();
       if (config.getAuthConfig().isPresent()) {
         fetchCommand.setCredentialsProvider(
           authenticationManager.getCredentialsProvider(config.getAuthConfig().get())
@@ -139,7 +139,7 @@ public class GitHubRepoNavigatorImpl implements GitHubRepoNavigator {
 
   private void setupRepository() throws GitHubNavigatorException {
     try {
-      Path localPath = getLocalRepositoryPath();
+      var localPath = getLocalRepositoryPath();
 
       if (repositoryExists(localPath)) {
         logger.debug("Opening existing repository at: {}", localPath);
@@ -165,8 +165,8 @@ public class GitHubRepoNavigatorImpl implements GitHubRepoNavigator {
     }
 
     try {
-      String repoName = extractRepositoryName(config.getRepositoryUrl());
-      Path tempDir = Files.createTempDirectory("github-navigator-");
+      var repoName = extractRepositoryName(config.getRepositoryUrl());
+      var tempDir = Files.createTempDirectory("github-navigator-");
       return tempDir.resolve(repoName);
     } catch (IOException e) {
       throw new GitHubNavigatorException("Failed to create temporary directory", e);
@@ -174,8 +174,8 @@ public class GitHubRepoNavigatorImpl implements GitHubRepoNavigator {
   }
 
   private String extractRepositoryName(String repositoryUrl) {
-    String[] parts = repositoryUrl.split("/");
-    String repoName = parts[parts.length - 1];
+    var parts = repositoryUrl.split("/");
+    var repoName = parts[parts.length - 1];
     if (repoName.endsWith(".git")) {
       repoName = repoName.substring(0, repoName.length() - 4);
     }
@@ -183,12 +183,12 @@ public class GitHubRepoNavigatorImpl implements GitHubRepoNavigator {
   }
 
   private boolean repositoryExists(Path localPath) {
-    File gitDir = localPath.resolve(".git").toFile();
+    var gitDir = localPath.resolve(".git").toFile();
     return gitDir.exists() && gitDir.isDirectory();
   }
 
   private void openExistingRepository(Path localPath) throws IOException, GitAPIException {
-    FileRepositoryBuilder builder = new FileRepositoryBuilder();
+    var builder = new FileRepositoryBuilder();
     repository = builder.setGitDir(localPath.resolve(".git").toFile())
       .readEnvironment()
       .findGitDir()
@@ -202,7 +202,7 @@ public class GitHubRepoNavigatorImpl implements GitHubRepoNavigator {
   private void cloneRepository(Path localPath) throws GitAPIException, AuthenticationException, IOException {
     Files.createDirectories(localPath.getParent());
 
-    CloneCommand cloneCommand = Git.cloneRepository();
+    var cloneCommand = Git.cloneRepository();
     cloneCommand.setURI(config.getRepositoryUrl());
     cloneCommand.setDirectory(localPath.toFile());
     cloneCommand.setBranch(config.getBranch());
