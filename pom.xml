@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.github.navigator</groupId>
+    <groupId>edu.stanford.protege.webprotege</groupId>
     <artifactId>github-commit-navigator</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
@@ -131,7 +131,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.1.0</version>
                 <configuration>
-                    <mainClass>com.github.navigator.cli.GitHubNavigatorCli</mainClass>
+                    <mainClass>edu.stanford.protege.webprotege.cli.GitHubNavigatorCli</mainClass>
                 </configuration>
             </plugin>
         </plugins>
