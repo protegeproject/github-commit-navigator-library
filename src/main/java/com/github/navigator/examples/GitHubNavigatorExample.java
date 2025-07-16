@@ -12,21 +12,33 @@ public class GitHubNavigatorExample {
     public static void main(String[] args) {
         System.out.println("GitHub Navigator Example");
         if (args.length < 2) {
-            System.err.println("Usage: java GitHubNavigatorExample <repository-url> <personal-access-token>");
+            System.err.println("Usage: java GitHubNavigatorExample <repository-url> <clone-directory> [personal-access-token]");
+            System.err.println("  repository-url: The GitHub repository URL (e.g., https://github.com/user/repo.git)");
+            System.err.println("  clone-directory: Local directory path where the repository will be cloned");
+            System.err.println("  personal-access-token: Optional GitHub personal access token for private repositories");
             System.exit(1);
         }
         
         String repositoryUrl = args[0];
-        String token = args[1];
+        String cloneDirectory = args[1];
+        String token = args.length > 2 ? args[2] : null;
         
         try {
-            GitHubRepoNavigator navigator = GitHubRepoNavigatorBuilder
+            GitHubRepoNavigatorBuilder builder = GitHubRepoNavigatorBuilder
                 .forRepository(repositoryUrl)
-                .withPersonalAccessToken(token)
+                .localCloneDirectory(cloneDirectory)
                 .branch("main")
-                .fileFilters("*.java", "*.md")
-                .localCloneDirectory("/tmp/github-navigator-example")
-                .build();
+                .fileFilters("*.java", "*.md");
+            
+            // Add authentication only if token is provided
+            if (token != null && !token.trim().isEmpty()) {
+                builder.withPersonalAccessToken(token);
+                System.out.println("Using provided personal access token for authentication");
+            } else {
+                System.out.println("No authentication token provided - accessing public repository");
+            }
+            
+            GitHubRepoNavigator navigator = builder.build();
             
             navigator.initialize();
             
