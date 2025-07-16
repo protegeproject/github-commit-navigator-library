@@ -57,12 +57,16 @@ public class NavigatorConfig {
   }
 
   public static class Builder {
+
+    private static final String DEFAULT_BRANCH_NAME = "main";
+    private static final boolean DEFAULT_SHALLOW_CLONE = false;
+
     private final String repositoryUrl;
     private Path localCloneDirectory;
     private List<String> fileFilters;
-    private String branch = "main";
+    private String branch = DEFAULT_BRANCH_NAME;
     private String startingCommit;
-    private boolean shallowClone = false;
+    private boolean shallowClone = DEFAULT_SHALLOW_CLONE;
     private AuthenticationConfig authConfig;
 
     private Builder(String repositoryUrl) {
