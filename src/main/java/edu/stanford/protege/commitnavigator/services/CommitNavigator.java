@@ -3,6 +3,8 @@ package edu.stanford.protege.commitnavigator.services;
 import edu.stanford.protege.commitnavigator.exceptions.RepositoryException;
 import edu.stanford.protege.commitnavigator.model.CommitMetadata;
 
+import java.nio.file.Path;
+
 /**
  * Service interface for navigating through Git repository commits in sequential order.
  * 
@@ -40,6 +42,7 @@ public interface CommitNavigator {
    * @throws RepositoryException if there is no next commit or if an error occurs during navigation
    */
   CommitMetadata next() throws RepositoryException;
+
   /**
    * Moves to the previous commit in the history and returns its metadata.
    * 
@@ -47,6 +50,7 @@ public interface CommitNavigator {
    * @throws RepositoryException if there is no previous commit or if an error occurs during navigation
    */
   CommitMetadata previous() throws RepositoryException;
+
   /**
    * Moves to the next commit in the history and checks out the working directory to that commit.
    * 
@@ -54,6 +58,7 @@ public interface CommitNavigator {
    * @throws RepositoryException if there is no next commit, if checkout fails, or if an error occurs during navigation
    */
   CommitMetadata nextAndCheckout() throws RepositoryException;
+
   /**
    * Moves to the previous commit in the history and checks out the working directory to that commit.
    * 
@@ -61,6 +66,7 @@ public interface CommitNavigator {
    * @throws RepositoryException if there is no previous commit, if checkout fails, or if an error occurs during navigation
    */
   CommitMetadata previousAndCheckout() throws RepositoryException;
+
   /**
    * Checks if there is a next commit available for navigation.
    * 
@@ -68,6 +74,7 @@ public interface CommitNavigator {
    * @throws RepositoryException if an error occurs while checking for the next commit
    */
   boolean hasNext() throws RepositoryException;
+
   /**
    * Checks if there is a previous commit available for navigation.
    * 
@@ -75,6 +82,7 @@ public interface CommitNavigator {
    * @throws RepositoryException if an error occurs while checking for the previous commit
    */
   boolean hasPrevious() throws RepositoryException;
+
   /**
    * Returns the metadata of the current commit without changing the navigation position.
    * 
@@ -82,6 +90,15 @@ public interface CommitNavigator {
    * @throws RepositoryException if there is no current commit or if an error occurs while retrieving commit metadata
    */
   CommitMetadata getCurrentCommit() throws RepositoryException;
+
+  /**
+   * Returns the absolute path on the local filesystem given a file path relative to the repository root.
+   *
+   * @param relativePath the relative file path within the repository (e.g., "src/main/java/Main.java")
+   * @return the absolute {@link Path} to the file on the local filesystem
+   */
+  Path resolveFilePath(String relativePath);
+
   /**
    * Resets the navigator to its initial state, typically the starting commit or the first commit.
    * 

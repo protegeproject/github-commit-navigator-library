@@ -15,7 +15,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import java.io.IOException;
-
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -206,6 +207,25 @@ public class CommitNavigatorImpl implements CommitNavigator {
       return createCommitMetadata(filteredCommits.get(currentIndex));
     }
     return null;
+  }
+
+  /**
+   * Resolves a relative file path to its absolute path within the repository.
+   * 
+   * <p>This method takes a file path relative to the repository root and returns
+   * the absolute path on the local filesystem. The path can use forward slashes
+   * regardless of the operating system.</p>
+   * 
+   * @param relativePath the relative file path within the repository (e.g., "src/main/java/Main.java")
+   * @return the absolute {@link Path} to the file on the local filesystem
+   *
+   * @throws NullPointerException if relativePath is null
+   */
+  @Override
+  public Path resolveFilePath(String relativePath) {
+    Objects.requireNonNull(relativePath, "Relative path cannot be null");
+    var localDirectory = repository.getWorkTree().toPath();
+    return localDirectory.resolve(Paths.get(relativePath));
   }
 
   /**
