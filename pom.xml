@@ -131,7 +131,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.1.0</version>
                 <configuration>
-                    <mainClass>edu.stanford.protege.webprotege.cli.GitHubNavigatorCli</mainClass>
+                    <mainClass>edu.stanford.protege.commitnavigator.cli.GitHubNavigatorCli</mainClass>
                 </configuration>
             </plugin>
         </plugins>
