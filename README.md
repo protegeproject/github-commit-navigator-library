@@ -17,7 +17,7 @@ A modern Java library for navigating GitHub repository commits programmatically 
 
 ```xml
 <dependency>
-    <groupId>edu.stanford.protege.webprotege</groupId>
+    <groupId>edu.stanford.protege.commitnavigator</groupId>
     <artifactId>github-commit-navigator</artifactId>
     <version>1.0.0</version>
 </dependency>
@@ -26,10 +26,10 @@ A modern Java library for navigating GitHub repository commits programmatically 
 ### Basic Usage
 
 ```java
-import com.github.navigator.GitHubRepoNavigator;
-import com.github.navigator.GitHubRepoNavigatorBuilder;
-import com.github.navigator.services.CommitNavigator;
-import com.github.navigator.model.CommitMetadata;
+import edu.stanford.protege.commitnavigator.GitHubRepoNavigator;
+import edu.stanford.protege.commitnavigator.GitHubRepoNavigatorBuilder;
+import edu.stanford.protege.commitnavigator.services.CommitNavigator;
+import edu.stanford.protege.commitnavigator.model.CommitMetadata;
 
 // Create navigator with Personal Access Token
 var navigator = GitHubRepoNavigatorBuilder
