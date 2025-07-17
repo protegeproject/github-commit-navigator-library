@@ -15,8 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -317,10 +316,7 @@ public class CommitNavigatorImpl implements CommitNavigator {
   private CommitMetadata createCommitMetadata(RevCommit commit) {
     var commitHash = commit.getName();
     var committerUsername = commit.getCommitterIdent().getName();
-    var commitDate = LocalDateTime.ofInstant(
-      commit.getCommitterIdent().getWhen().toInstant(),
-      ZoneId.systemDefault()
-    );
+    var commitDate = commit.getCommitterIdent().getWhen().toInstant();
     var commitMessage = commit.getFullMessage();
 
     return CommitMetadata.create(commitHash, committerUsername, commitDate, commitMessage);

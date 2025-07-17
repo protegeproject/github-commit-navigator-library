@@ -3,7 +3,7 @@ package edu.stanford.protege.commitnavigator.model;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -17,7 +17,7 @@ class CommitMetadataSerializationTest {
     CommitMetadata original = new CommitMetadata(
       "def456",
       "recorduser",
-      LocalDateTime.of(2023, 6, 15, 10, 30, 0),
+      Instant.parse("2023-06-15T10:30:00Z"),
       "Record pattern commit"
     );
 
@@ -46,7 +46,7 @@ class CommitMetadataSerializationTest {
     CommitMetadata commit = CommitMetadata.create(
       "xyz789",
       "recorduser",
-      LocalDateTime.of(2023, 12, 1, 14, 45, 30),
+      Instant.parse("2023-12-01T14:45:30Z"),
       "Record test commit"
     );
 

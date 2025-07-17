@@ -1,9 +1,12 @@
 package edu.stanford.protege.commitnavigator.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Objects;
 
 /**
@@ -13,13 +16,16 @@ import java.util.Objects;
  * author details, timestamp, and message. It supports JSON serialization/deserialization
  * and provides validation to ensure all required fields are non-null.</p>
  * 
+ * <p>The commit timestamp is stored as an {@link Instant} to preserve exact moment in time
+ * across different time zones, ensuring timeline consistency regardless of where the code runs.</p>
+ * 
  * <p>Usage example:</p>
  * <pre>
  * {@code
  * var metadata = CommitMetadata.create(
  *     "abc123def456",
  *     "johndoe",
- *     LocalDateTime.now(),
+ *     Instant.now(),
  *     "Fix critical bug in authentication"
  * );
  * 
@@ -32,7 +38,7 @@ import java.util.Objects;
  * 
  * @param commitHash the full SHA-1 hash of the commit
  * @param committerUsername the username of the person who committed the changes
- * @param commitDate the date and time when the commit was made
+ * @param commitDate the exact moment when the commit was made (timezone-independent)
  * @param commitMessage the commit message describing the changes
  * 
  * @since 1.0.0
@@ -45,8 +51,8 @@ public record CommitMetadata(
   String committerUsername,
   
   @JsonProperty("commitDate")
-  @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
-  LocalDateTime commitDate,
+  @JsonFormat(shape = JsonFormat.Shape.STRING)
+  Instant commitDate,
   
   @JsonProperty("commitMessage") 
   String commitMessage
@@ -67,12 +73,12 @@ public record CommitMetadata(
    * 
    * @param commitHash the full SHA-1 hash of the commit
    * @param committerUsername the username of the person who committed the changes
-   * @param commitDate the date and time when the commit was made
+   * @param commitDate the exact moment when the commit was made (timezone-independent)
    * @param commitMessage the commit message describing the changes
    * @return a new {@link CommitMetadata} instance
    * @throws NullPointerException if any parameter is null
    */
-  public static CommitMetadata create(String commitHash, String committerUsername, LocalDateTime commitDate, String commitMessage) {
+  public static CommitMetadata create(String commitHash, String committerUsername, Instant commitDate, String commitMessage) {
     return new CommitMetadata(commitHash, committerUsername, commitDate, commitMessage);
   }
   
@@ -95,11 +101,15 @@ public record CommitMetadata(
   }
   
   /**
-   * Returns the date and time when the commit was made.
+   * Returns the exact moment when the commit was made.
    * 
-   * @return the commit date and time
+   * <p>This returns an {@link Instant} representing the precise moment in time
+   * when the commit was made, independent of time zone. This ensures timeline
+   * consistency when commits are made from different time zones.</p>
+   * 
+   * @return the commit timestamp as an {@link Instant}
    */
-  public LocalDateTime getCommitDate() {
+  public Instant getCommitDate() {
     return commitDate;
   }
   
@@ -110,5 +120,32 @@ public record CommitMetadata(
    */
   public String getCommitMessage() {
     return commitMessage;
+  }
+
+  /**
+   * Returns the commit date formatted in the specified time zone.
+   * 
+   * <p>This convenience method allows formatting the commit timestamp
+   * in any time zone while preserving the original timeline accuracy.</p>
+   * 
+   * @param zone the time zone to format the date in
+   * @return the commit date as a {@link ZonedDateTime} in the specified zone
+   */
+  @JsonIgnore
+  public ZonedDateTime getCommitDateInZone(ZoneId zone) {
+    return commitDate.atZone(zone);
+  }
+  
+  /**
+   * Returns the commit date formatted in the system's default time zone.
+   * 
+   * <p>This convenience method formats the commit timestamp in the system's
+   * default time zone for display purposes.</p>
+   * 
+   * @return the commit date as a {@link ZonedDateTime} in the system default zone
+   */
+  @JsonIgnore
+  public ZonedDateTime getCommitDateInSystemZone() {
+    return getCommitDateInZone(ZoneId.systemDefault());
   }
 }

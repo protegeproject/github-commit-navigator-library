@@ -3,7 +3,7 @@ package edu.stanford.protege.commitnavigator.model;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -17,7 +17,7 @@ class CommitMetadataTest {
     var original = CommitMetadata.create(
         "abc123",
         "testuser",
-        LocalDateTime.of(2023, 1, 1, 12, 0, 0),
+        Instant.parse("2023-01-01T12:00:00Z"),
         "Test commit message"
     );
     
@@ -37,14 +37,14 @@ class CommitMetadataTest {
     var commit1 = CommitMetadata.create(
         "abc123",
         "testuser",
-        LocalDateTime.of(2023, 1, 1, 12, 0, 0),
+        Instant.parse("2023-01-01T12:00:00Z"),
         "Test commit message"
     );
     
     var commit2 = CommitMetadata.create(
         "abc123",
         "testuser",
-        LocalDateTime.of(2023, 1, 1, 12, 0, 0),
+        Instant.parse("2023-01-01T12:00:00Z"),
         "Test commit message"
     );
     
