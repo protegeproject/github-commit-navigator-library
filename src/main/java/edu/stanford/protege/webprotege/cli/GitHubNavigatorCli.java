@@ -10,6 +10,31 @@ import picocli.CommandLine.Parameters;
 
 import java.util.concurrent.Callable;
 
+/**
+ * Command-line interface for the GitHub repository commit navigator.
+ * 
+ * <p>This class provides a command-line tool for analyzing GitHub repository commits
+ * with support for authentication, file filtering, and branch selection. It uses
+ * the PicoCLI library for argument parsing and command execution.</p>
+ * 
+ * <p>Usage examples:</p>
+ * <pre>
+ * {@code
+ * // Basic usage
+ * java -jar github-navigator.jar https://github.com/user/repo.git
+ * 
+ * // With authentication and filters
+ * java -jar github-navigator.jar \
+ *   --token ghp_xxxxxxxxxxxx \
+ *   --file-filter "*.java,*.md" \
+ *   --branch develop \
+ *   --clone-directory /tmp/repo \
+ *   https://github.com/user/repo.git
+ * }
+ * </pre>
+ * 
+ * @since 1.0.0
+ */
 @Command(name = "github-navigator",
          description = "Navigate GitHub repository commits programmatically",
          mixinStandardHelpOptions = true,
@@ -32,11 +57,22 @@ public class GitHubNavigatorCli implements Callable<Integer> {
   @Option(names = {"-t", "--token"}, description = "GitHub personal access token for private repositories")
   private String token;
 
+  /**
+   * Main entry point for the CLI application.
+   * 
+   * @param args command-line arguments
+   */
   public static void main(String[] args) {
     var exitCode = new CommandLine(new GitHubNavigatorCli()).execute(args);
     System.exit(exitCode);
   }
 
+  /**
+   * Executes the CLI command to navigate through repository commits.
+   * 
+   * @return exit code (0 for success, 1 for error)
+   * @throws Exception if an error occurs during execution
+   */
   @Override
   public Integer call() throws Exception {
     // Set default clone directory to system temp directory if not provided
@@ -91,6 +127,12 @@ public class GitHubNavigatorCli implements Callable<Integer> {
     }
   }
 
+  /**
+   * Extracts the repository name from a GitHub repository URL.
+   * 
+   * @param repositoryUrl the GitHub repository URL
+   * @return the repository name without the .git suffix
+   */
   private static String extractRepositoryName(String repositoryUrl) {
     var parts = repositoryUrl.split("/");
     var repoName = parts[parts.length - 1];

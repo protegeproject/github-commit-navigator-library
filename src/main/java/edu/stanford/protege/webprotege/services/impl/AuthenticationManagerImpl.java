@@ -14,10 +14,41 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.util.Optional;
 
+/**
+ * Default implementation of {@link AuthenticationManager} that provides GitHub authentication
+ * and credential management services.
+ * 
+ * <p>This implementation supports multiple authentication methods including Personal Access Tokens,
+ * OAuth tokens, and username/password combinations. It handles both GitHub API authentication
+ * and JGit credential provider creation for Git operations.</p>
+ * 
+ * <p>The class is marked as {@link Singleton} to ensure a single instance is used throughout
+ * the application lifecycle.</p>
+ * 
+ * @since 1.0.0
+ */
 @Singleton
 public class AuthenticationManagerImpl implements AuthenticationManager {
   private static final Logger logger = LoggerFactory.getLogger(AuthenticationManagerImpl.class);
 
+  /**
+   * Authenticates with GitHub using the provided configuration.
+   * 
+   * <p>This method supports the following authentication types:</p>
+   * <ul>
+   *   <li>Personal Access Token - Uses OAuth token authentication</li>
+   *   <li>OAuth Token - Uses OAuth token authentication</li>
+   *   <li>Username/Password - Uses password-based authentication</li>
+   * </ul>
+   * 
+   * <p>If no configuration is provided, anonymous authentication is attempted
+   * for accessing public repositories.</p>
+   * 
+   * @param config the authentication configuration, or null for anonymous access
+   * @return an authenticated {@link GitHub} instance
+   * @throws AuthenticationException if authentication fails, if the authentication
+   *                                 type is not supported, or if SSH key authentication is attempted
+   */
   @Override
   public GitHub authenticateGitHub(AuthenticationConfig config) throws AuthenticationException {
     if (config == null) {
@@ -45,6 +76,24 @@ public class AuthenticationManagerImpl implements AuthenticationManager {
     }
   }
 
+  /**
+   * Creates a JGit credentials provider for Git operations.
+   * 
+   * <p>This method converts the authentication configuration into a JGit-compatible
+   * credentials provider that can be used for Git operations such as clone, fetch, and push.</p>
+   * 
+   * <p>Supported authentication types and their JGit mappings:</p>
+   * <ul>
+   *   <li>Personal Access Token - Uses token as username with empty password</li>
+   *   <li>OAuth Token - Uses token as username with empty password</li>
+   *   <li>Username/Password - Uses provided username and password</li>
+   * </ul>
+   * 
+   * @param config the authentication configuration, or null for anonymous access
+   * @return a {@link CredentialsProvider} for Git operations, or null for anonymous access
+   * @throws AuthenticationException if the authentication type is not supported
+   *                                 or if SSH key authentication is attempted
+   */
   @Override
   public CredentialsProvider getCredentialsProvider(AuthenticationConfig config) throws AuthenticationException {
     if (config == null) {
@@ -62,6 +111,21 @@ public class AuthenticationManagerImpl implements AuthenticationManager {
     };
   }
 
+  /**
+   * Validates the authentication configuration by checking credential format and testing connectivity.
+   * 
+   * <p>This method performs two levels of validation:</p>
+   * <ol>
+   *   <li>Format validation - Ensures credentials are not null/empty and properly formatted</li>
+   *   <li>Connectivity validation - Tests actual authentication with GitHub API</li>
+   * </ol>
+   * 
+   * <p>For anonymous access (null configuration), validation is skipped.</p>
+   * 
+   * @param config the authentication configuration to validate, or null for anonymous access
+   * @throws AuthenticationException if the configuration is invalid, credentials are malformed,
+   *                                 or if authentication with GitHub fails
+   */
   @Override
   public void validateAuthentication(AuthenticationConfig config) throws AuthenticationException {
     logger.debug("Validating authentication configuration");

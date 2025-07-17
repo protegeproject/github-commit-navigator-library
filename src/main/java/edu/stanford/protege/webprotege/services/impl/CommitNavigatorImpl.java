@@ -21,6 +21,28 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Default implementation of {@link CommitNavigator} that provides sequential navigation
+ * through Git repository commits with optional file filtering.
+ * 
+ * <p>This implementation maintains a filtered list of commits based on the configured
+ * file filters and provides bidirectional navigation through the commit history. It supports
+ * both navigation with and without working directory checkout operations.</p>
+ * 
+ * <p>Key features:</p>
+ * <ul>
+ *   <li>Lazy initialization of commit list on first access</li>
+ *   <li>File-based filtering of commits using glob patterns</li>
+ *   <li>Bidirectional navigation (next/previous)</li>
+ *   <li>Optional checkout operations during navigation</li>
+ *   <li>Configurable starting commit position</li>
+ * </ul>
+ * 
+ * <p>The navigator maintains an internal index to track the current position in the
+ * filtered commit list, allowing for efficient navigation operations.</p>
+ * 
+ * @since 1.0.0
+ */
 public class CommitNavigatorImpl implements CommitNavigator {
   private static final Logger logger = LoggerFactory.getLogger(CommitNavigatorImpl.class);
 
@@ -33,6 +55,18 @@ public class CommitNavigatorImpl implements CommitNavigator {
   private int currentIndex;
   private boolean initialized = false;
 
+  /**
+   * Constructs a new CommitNavigatorImpl with the specified dependencies.
+   * 
+   * <p>The navigator is initialized with a current index of -1, indicating no current commit.
+   * The actual commit list is built lazily on first access to improve performance.</p>
+   * 
+   * @param repository the Git repository to navigate
+   * @param git the JGit Git instance for repository operations
+   * @param config the navigation configuration containing file filters and other settings
+   * @param fileChangeDetector the service for detecting file changes in commits
+   * @throws NullPointerException if any parameter is null
+   */
   @Inject
   public CommitNavigatorImpl(Repository repository, Git git, NavigatorConfig config, FileChangeDetector fileChangeDetector) {
     this.repository = Objects.requireNonNull(repository, "Repository cannot be null");
@@ -42,6 +76,15 @@ public class CommitNavigatorImpl implements CommitNavigator {
     this.currentIndex = -1;
   }
 
+  /**
+   * Moves to the next commit in the filtered commit history.
+   * 
+   * <p>This method advances the internal index and returns the metadata of the next commit.
+   * If no next commit is available, returns null.</p>
+   * 
+   * @return the {@link CommitMetadata} of the next commit, or null if no next commit exists
+   * @throws RepositoryException if an error occurs during navigation or repository access
+   */
   @Override
   public CommitMetadata next() throws RepositoryException {
     ensureInitialized();
@@ -56,6 +99,15 @@ public class CommitNavigatorImpl implements CommitNavigator {
     return createCommitMetadata(commit);
   }
 
+  /**
+   * Moves to the previous commit in the filtered commit history.
+   * 
+   * <p>This method decrements the internal index and returns the metadata of the previous commit.
+   * If no previous commit is available, returns null.</p>
+   * 
+   * @return the {@link CommitMetadata} of the previous commit, or null if no previous commit exists
+   * @throws RepositoryException if an error occurs during navigation or repository access
+   */
   @Override
   public CommitMetadata previous() throws RepositoryException {
     ensureInitialized();
@@ -70,6 +122,16 @@ public class CommitNavigatorImpl implements CommitNavigator {
     return createCommitMetadata(commit);
   }
 
+  /**
+   * Moves to the next commit and checks out the working directory to that commit.
+   * 
+   * <p>This method combines navigation and checkout operations. It first moves to the next commit,
+   * then checks out the working directory to match that commit's state. If no next commit
+   * is available, no checkout is performed.</p>
+   * 
+   * @return the {@link CommitMetadata} of the next commit, or null if no next commit exists
+   * @throws RepositoryException if an error occurs during navigation, checkout, or repository access
+   */
   @Override
   public CommitMetadata nextAndCheckout() throws RepositoryException {
     var commitMetadata = next();
@@ -79,6 +141,16 @@ public class CommitNavigatorImpl implements CommitNavigator {
     return commitMetadata;
   }
 
+  /**
+   * Moves to the previous commit and checks out the working directory to that commit.
+   * 
+   * <p>This method combines navigation and checkout operations. It first moves to the previous commit,
+   * then checks out the working directory to match that commit's state. If no previous commit
+   * is available, no checkout is performed.</p>
+   * 
+   * @return the {@link CommitMetadata} of the previous commit, or null if no previous commit exists
+   * @throws RepositoryException if an error occurs during navigation, checkout, or repository access
+   */
   @Override
   public CommitMetadata previousAndCheckout() throws RepositoryException {
     var commitMetadata = previous();
@@ -88,18 +160,45 @@ public class CommitNavigatorImpl implements CommitNavigator {
     return commitMetadata;
   }
 
+  /**
+   * Checks if there is a next commit available for navigation.
+   * 
+   * <p>This method determines if the current index position allows for forward navigation
+   * in the filtered commit list.</p>
+   * 
+   * @return true if there is a next commit available, false otherwise
+   * @throws RepositoryException if an error occurs during repository access or initialization
+   */
   @Override
   public boolean hasNext() throws RepositoryException {
     ensureInitialized();
     return currentIndex < filteredCommits.size() - 1;
   }
 
+  /**
+   * Checks if there is a previous commit available for navigation.
+   * 
+   * <p>This method determines if the current index position allows for backward navigation
+   * in the filtered commit list.</p>
+   * 
+   * @return true if there is a previous commit available, false otherwise
+   * @throws RepositoryException if an error occurs during repository access or initialization
+   */
   @Override
   public boolean hasPrevious() throws RepositoryException {
     ensureInitialized();
     return currentIndex > 0;
   }
 
+  /**
+   * Returns the metadata of the current commit without changing the navigation position.
+   * 
+   * <p>This method provides access to the current commit's metadata without affecting
+   * the navigation state. If no current commit is set (index is -1 or invalid), returns null.</p>
+   * 
+   * @return the {@link CommitMetadata} of the current commit, or null if no current commit is set
+   * @throws RepositoryException if an error occurs during repository access or initialization
+   */
   @Override
   public CommitMetadata getCurrentCommit() throws RepositoryException {
     ensureInitialized();
@@ -110,6 +209,15 @@ public class CommitNavigatorImpl implements CommitNavigator {
     return null;
   }
 
+  /**
+   * Resets the navigator to its initial state.
+   * 
+   * <p>This method clears the filtered commit list, resets the current index to -1,
+   * and marks the navigator as uninitialized. The next navigation operation will
+   * trigger re-initialization and rebuild the filtered commit list.</p>
+   * 
+   * @throws RepositoryException if an error occurs during the reset operation
+   */
   @Override
   public void reset() throws RepositoryException {
     logger.debug("Resetting commit navigator");
