@@ -7,7 +7,7 @@ import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class NavigatorConfigTest {
+class RepositoryConfigTest {
 
   @Test
   void testBuilderPattern() {
@@ -15,7 +15,7 @@ class NavigatorConfigTest {
     String branch = "develop";
     String startingCommit = "abc123";
 
-    NavigatorConfig config = NavigatorConfig.builder(repositoryUrl)
+    RepositoryConfig config = RepositoryConfig.builder(repositoryUrl)
       .localCloneDirectory(Paths.get("/tmp/test"))
       .fileFilters(Arrays.asList("*.java", "*.md"))
       .branch(branch)
@@ -36,7 +36,7 @@ class NavigatorConfigTest {
   void testDefaultValues() {
     String repositoryUrl = "https://github.com/example/repo.git";
 
-    NavigatorConfig config = NavigatorConfig.builder(repositoryUrl)
+    RepositoryConfig config = RepositoryConfig.builder(repositoryUrl)
       .build();
 
     assertEquals(repositoryUrl, config.getRepositoryUrl());
@@ -53,7 +53,7 @@ class NavigatorConfigTest {
     String repositoryUrl = "https://github.com/example/repo.git";
     AuthenticationConfig authConfig = AuthenticationConfig.personalAccessToken("token").build();
 
-    NavigatorConfig config = NavigatorConfig.builder(repositoryUrl)
+    RepositoryConfig config = RepositoryConfig.builder(repositoryUrl)
       .authConfig(authConfig)
       .build();
 

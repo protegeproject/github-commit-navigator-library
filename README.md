@@ -26,19 +26,19 @@ A modern Java library for navigating GitHub repository commits programmatically 
 ### Basic Usage
 
 ```java
-import edu.stanford.protege.commitnavigator.GitHubRepoNavigator;
-import edu.stanford.protege.commitnavigator.GitHubRepoNavigatorBuilder;
+import edu.stanford.protege.commitnavigator.GitHubRepository;
+import edu.stanford.protege.commitnavigator.GitHubRepositoryBuilder;
 import edu.stanford.protege.commitnavigator.services.CommitNavigator;
 import edu.stanford.protege.commitnavigator.model.CommitMetadata;
 
 // Create navigator with Personal Access Token
-var navigator = GitHubRepoNavigatorBuilder
+var repository = GitHubRepositoryBuilder
     .forRepository("https://github.com/example/repo.git")
     .withPersonalAccessToken("your-token-here")
     .build();
 
 // Initialize the navigator
-navigator.initialize();
+repository.initialize();
 
 // Get commit navigator
 var commitNavigator = navigator.getCommitNavigator();
@@ -110,7 +110,7 @@ The library supports multiple authentication methods for accessing private repos
 For public repositories, authentication is optional:
 
 ```java
-var navigator = GitHubRepoNavigatorBuilder
+var navigator = GitHubRepositoryBuilder
     .forRepository("https://github.com/public/repo.git")
     .build(); // No authentication needed
 ```

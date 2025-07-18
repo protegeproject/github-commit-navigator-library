@@ -1,6 +1,6 @@
 package edu.stanford.protege.commitnavigator.services.impl;
 
-import edu.stanford.protege.commitnavigator.config.NavigatorConfig;
+import edu.stanford.protege.commitnavigator.config.RepositoryConfig;
 import edu.stanford.protege.commitnavigator.exceptions.RepositoryException;
 import edu.stanford.protege.commitnavigator.model.CommitMetadata;
 import edu.stanford.protege.commitnavigator.services.CommitNavigator;
@@ -48,7 +48,7 @@ public class CommitNavigatorImpl implements CommitNavigator {
 
   private final Repository repository;
   private final Git git;
-  private final NavigatorConfig config;
+  private final RepositoryConfig config;
   private final FileChangeDetector fileChangeDetector;
 
   private List<RevCommit> filteredCommits;
@@ -68,7 +68,7 @@ public class CommitNavigatorImpl implements CommitNavigator {
    * @throws NullPointerException if any parameter is null
    */
   @Inject
-  public CommitNavigatorImpl(Repository repository, Git git, NavigatorConfig config, FileChangeDetector fileChangeDetector) {
+  public CommitNavigatorImpl(Repository repository, Git git, RepositoryConfig config, FileChangeDetector fileChangeDetector) {
     this.repository = Objects.requireNonNull(repository, "Repository cannot be null");
     this.git = Objects.requireNonNull(git, "Git cannot be null");
     this.config = Objects.requireNonNull(config, "NavigatorConfig cannot be null");

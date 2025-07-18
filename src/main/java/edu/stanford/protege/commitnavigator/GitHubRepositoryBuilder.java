@@ -1,7 +1,7 @@
 package edu.stanford.protege.commitnavigator;
 
 import edu.stanford.protege.commitnavigator.config.AuthenticationConfig;
-import edu.stanford.protege.commitnavigator.config.NavigatorConfig;
+import edu.stanford.protege.commitnavigator.config.RepositoryConfig;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -9,7 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Builder class for creating {@link GitHubRepoNavigator} instances with flexible configuration options.
+ * Builder class for creating {@link GitHubRepository} instances with flexible configuration options.
  * 
  * <p>This builder provides a fluent API for configuring repository navigation parameters including
  * authentication methods, file filters, branch selection, and clone behavior. The builder supports
@@ -31,22 +31,22 @@ import java.util.List;
  * 
  * @since 1.0.0
  */
-public class GitHubRepoNavigatorBuilder {
-  private final NavigatorConfig.Builder configBuilder;
+public class GitHubRepositoryBuilder {
+  private final RepositoryConfig.Builder configBuilder;
 
-  private GitHubRepoNavigatorBuilder(String repositoryUrl) {
-    this.configBuilder = NavigatorConfig.builder(repositoryUrl);
+  private GitHubRepositoryBuilder(String repositoryUrl) {
+    this.configBuilder = RepositoryConfig.builder(repositoryUrl);
   }
 
   /**
    * Creates a new builder instance for the specified repository URL.
    * 
    * @param repositoryUrl the GitHub repository URL (HTTPS or SSH format)
-   * @return a new {@link GitHubRepoNavigatorBuilder} instance
+   * @return a new {@link GitHubRepositoryBuilder} instance
    * @throws NullPointerException if repositoryUrl is null
    */
-  public static GitHubRepoNavigatorBuilder forRepository(String repositoryUrl) {
-    return new GitHubRepoNavigatorBuilder(repositoryUrl);
+  public static GitHubRepositoryBuilder forRepository(String repositoryUrl) {
+    return new GitHubRepositoryBuilder(repositoryUrl);
   }
 
   /**
@@ -55,7 +55,7 @@ public class GitHubRepoNavigatorBuilder {
    * @param token the GitHub Personal Access Token
    * @return this builder instance for method chaining
    */
-  public GitHubRepoNavigatorBuilder withPersonalAccessToken(String token) {
+  public GitHubRepositoryBuilder withPersonalAccessToken(String token) {
     configBuilder.authConfig(AuthenticationConfig.personalAccessToken(token).build());
     return this;
   }
@@ -66,7 +66,7 @@ public class GitHubRepoNavigatorBuilder {
    * @param token the OAuth token
    * @return this builder instance for method chaining
    */
-  public GitHubRepoNavigatorBuilder withOAuthToken(String token) {
+  public GitHubRepositoryBuilder withOAuthToken(String token) {
     configBuilder.authConfig(AuthenticationConfig.oauth(token).build());
     return this;
   }
@@ -78,7 +78,7 @@ public class GitHubRepoNavigatorBuilder {
    * @param password the GitHub password or personal access token
    * @return this builder instance for method chaining
    */
-  public GitHubRepoNavigatorBuilder withUsernamePassword(String username, String password) {
+  public GitHubRepositoryBuilder withUsernamePassword(String username, String password) {
     configBuilder.authConfig(AuthenticationConfig.usernamePassword(username, password).build());
     return this;
   }
@@ -89,7 +89,7 @@ public class GitHubRepoNavigatorBuilder {
    * @param sshKeyPath the path to the SSH private key file
    * @return this builder instance for method chaining
    */
-  public GitHubRepoNavigatorBuilder withSshKey(String sshKeyPath) {
+  public GitHubRepositoryBuilder withSshKey(String sshKeyPath) {
     configBuilder.authConfig(AuthenticationConfig.sshKey(sshKeyPath).build());
     return this;
   }
@@ -100,7 +100,7 @@ public class GitHubRepoNavigatorBuilder {
    * @param path the local directory path as a string
    * @return this builder instance for method chaining
    */
-  public GitHubRepoNavigatorBuilder localCloneDirectory(String path) {
+  public GitHubRepositoryBuilder localCloneDirectory(String path) {
     configBuilder.localCloneDirectory(Paths.get(path));
     return this;
   }
@@ -111,7 +111,7 @@ public class GitHubRepoNavigatorBuilder {
    * @param path the local directory path as a {@link Path} object
    * @return this builder instance for method chaining
    */
-  public GitHubRepoNavigatorBuilder localCloneDirectory(Path path) {
+  public GitHubRepositoryBuilder localCloneDirectory(Path path) {
     configBuilder.localCloneDirectory(path);
     return this;
   }
@@ -125,7 +125,7 @@ public class GitHubRepoNavigatorBuilder {
    * @param filters variable number of file filter patterns
    * @return this builder instance for method chaining
    */
-  public GitHubRepoNavigatorBuilder fileFilters(String... filters) {
+  public GitHubRepositoryBuilder fileFilters(String... filters) {
     configBuilder.fileFilters(Arrays.asList(filters));
     return this;
   }
@@ -139,7 +139,7 @@ public class GitHubRepoNavigatorBuilder {
    * @param filters list of file filter patterns
    * @return this builder instance for method chaining
    */
-  public GitHubRepoNavigatorBuilder fileFilters(List<String> filters) {
+  public GitHubRepositoryBuilder fileFilters(List<String> filters) {
     configBuilder.fileFilters(filters);
     return this;
   }
@@ -150,7 +150,7 @@ public class GitHubRepoNavigatorBuilder {
    * @param branch the branch name (defaults to "main" if not specified)
    * @return this builder instance for method chaining
    */
-  public GitHubRepoNavigatorBuilder branch(String branch) {
+  public GitHubRepositoryBuilder branch(String branch) {
     configBuilder.branch(branch);
     return this;
   }
@@ -161,7 +161,7 @@ public class GitHubRepoNavigatorBuilder {
    * @param commitHash the full or abbreviated commit hash
    * @return this builder instance for method chaining
    */
-  public GitHubRepoNavigatorBuilder startingCommit(String commitHash) {
+  public GitHubRepositoryBuilder startingCommit(String commitHash) {
     configBuilder.startingCommit(commitHash);
     return this;
   }
@@ -175,22 +175,22 @@ public class GitHubRepoNavigatorBuilder {
    * @param shallow true to perform shallow clone, false for full clone
    * @return this builder instance for method chaining
    */
-  public GitHubRepoNavigatorBuilder shallowClone(boolean shallow) {
+  public GitHubRepositoryBuilder shallowClone(boolean shallow) {
     configBuilder.shallowClone(shallow);
     return this;
   }
 
   /**
-   * Builds a {@link GitHubRepoNavigator} instance with the configured parameters.
+   * Builds a {@link GitHubRepository} instance with the configured parameters.
    * 
    * <p>Authentication is optional - if no authentication methods are called,
    * the navigator will attempt to access public repositories without authentication.</p>
    * 
-   * @return a configured {@link GitHubRepoNavigator} instance
+   * @return a configured {@link GitHubRepository} instance
    * @throws IllegalStateException if required configuration parameters are missing
    */
-  public GitHubRepoNavigator build() {
+  public GitHubRepository build() {
     var config = configBuilder.build();
-    return GitHubRepoNavigatorFactory.create(config);
+    return GitHubRepositoryFactory.create(config);
   }
 }

@@ -1,7 +1,7 @@
 package edu.stanford.protege.commitnavigator.impl;
 
-import edu.stanford.protege.commitnavigator.GitHubRepoNavigator;
-import edu.stanford.protege.commitnavigator.config.NavigatorConfig;
+import edu.stanford.protege.commitnavigator.GitHubRepository;
+import edu.stanford.protege.commitnavigator.config.RepositoryConfig;
 import edu.stanford.protege.commitnavigator.exceptions.AuthenticationException;
 import edu.stanford.protege.commitnavigator.exceptions.GitHubNavigatorException;
 import edu.stanford.protege.commitnavigator.exceptions.RepositoryException;
@@ -24,7 +24,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 
 /**
- * Default implementation of {@link GitHubRepoNavigator} that provides Git repository management
+ * Default implementation of {@link GitHubRepository} that provides Git repository management
  * and commit navigation functionality.
  * 
  * <p>This implementation handles the complete lifecycle of repository operations including:</p>
@@ -66,10 +66,10 @@ import java.util.Objects;
  * 
  * @since 1.0.0
  */
-public class GitHubRepoNavigatorImpl implements GitHubRepoNavigator {
-  private static final Logger logger = LoggerFactory.getLogger(GitHubRepoNavigatorImpl.class);
+public class GitHubRepositoryImpl implements GitHubRepository {
+  private static final Logger logger = LoggerFactory.getLogger(GitHubRepositoryImpl.class);
 
-  private final NavigatorConfig config;
+  private final RepositoryConfig config;
   private final AuthenticationManager authenticationManager;
   private final FileChangeDetector fileChangeDetector;
 
@@ -92,9 +92,9 @@ public class GitHubRepoNavigatorImpl implements GitHubRepoNavigator {
    * @throws NullPointerException if any parameter is null
    */
   @Inject
-  public GitHubRepoNavigatorImpl(NavigatorConfig config,
-                                 AuthenticationManager authenticationManager,
-                                 FileChangeDetector fileChangeDetector) {
+  public GitHubRepositoryImpl(RepositoryConfig config,
+                              AuthenticationManager authenticationManager,
+                              FileChangeDetector fileChangeDetector) {
     this.config = Objects.requireNonNull(config, "NavigatorConfig cannot be null");
     this.authenticationManager = Objects.requireNonNull(authenticationManager, "AuthenticationManager cannot be null");
     this.fileChangeDetector = Objects.requireNonNull(fileChangeDetector, "FileChangeDetector cannot be null");
@@ -203,10 +203,10 @@ public class GitHubRepoNavigatorImpl implements GitHubRepoNavigator {
    * <p>This method provides access to the navigator's configuration parameters
    * including repository URL, authentication settings, and other navigation options.</p>
    *
-   * @return the {@link NavigatorConfig} used by this navigator
+   * @return the {@link RepositoryConfig} used by this navigator
    */
   @Override
-  public NavigatorConfig getConfig() {
+  public RepositoryConfig getConfig() {
     return config;
   }
 

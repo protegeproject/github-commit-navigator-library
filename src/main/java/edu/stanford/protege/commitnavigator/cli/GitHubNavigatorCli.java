@@ -1,6 +1,6 @@
 package edu.stanford.protege.commitnavigator.cli;
 
-import edu.stanford.protege.commitnavigator.GitHubRepoNavigatorBuilder;
+import edu.stanford.protege.commitnavigator.GitHubRepositoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
@@ -83,7 +83,7 @@ public class GitHubNavigatorCli implements Callable<Integer> {
     System.out.println("Clone directory: " + cloneDirectory + "\n");
 
     try {
-      var builder = GitHubRepoNavigatorBuilder
+      var builder = GitHubRepositoryBuilder
         .forRepository(repositoryUrl)
         .localCloneDirectory(cloneDirectory)
         .branch(branch);

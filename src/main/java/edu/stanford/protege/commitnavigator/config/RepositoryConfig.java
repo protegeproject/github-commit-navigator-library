@@ -27,7 +27,7 @@ import java.util.Optional;
  * 
  * @since 1.0.0
  */
-public class NavigatorConfig {
+public class RepositoryConfig {
   private final String repositoryUrl;
   private final Path localCloneDirectory;
   private final List<String> fileFilters;
@@ -36,7 +36,7 @@ public class NavigatorConfig {
   private final boolean shallowClone;
   private final AuthenticationConfig authConfig;
 
-  private NavigatorConfig(Builder builder) {
+  private RepositoryConfig(Builder builder) {
     this.repositoryUrl = Objects.requireNonNull(builder.repositoryUrl, "Repository URL cannot be null");
     this.localCloneDirectory = builder.localCloneDirectory;
     this.fileFilters = builder.fileFilters;
@@ -121,7 +121,7 @@ public class NavigatorConfig {
   }
 
   /**
-   * Builder class for constructing {@link NavigatorConfig} instances.
+   * Builder class for constructing {@link RepositoryConfig} instances.
    */
   public static class Builder {
 
@@ -207,12 +207,12 @@ public class NavigatorConfig {
     }
 
     /**
-     * Builds a {@link NavigatorConfig} instance with the configured parameters.
+     * Builds a {@link RepositoryConfig} instance with the configured parameters.
      * 
-     * @return a new {@link NavigatorConfig} instance
+     * @return a new {@link RepositoryConfig} instance
      */
-    public NavigatorConfig build() {
-      return new NavigatorConfig(this);
+    public RepositoryConfig build() {
+      return new RepositoryConfig(this);
     }
   }
 }

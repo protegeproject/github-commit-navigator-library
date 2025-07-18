@@ -1,7 +1,7 @@
 package edu.stanford.protege.commitnavigator;
 
 import edu.stanford.protege.commitnavigator.config.AuthenticationConfig;
-import edu.stanford.protege.commitnavigator.config.NavigatorConfig;
+import edu.stanford.protege.commitnavigator.config.RepositoryConfig;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Paths;
@@ -9,20 +9,20 @@ import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class GitHubRepoNavigatorBuilderTest {
+class GitHubRepositoryBuilderTest {
 
   @Test
   void testBuilderWithPersonalAccessToken() {
     String repositoryUrl = "https://github.com/example/repo.git";
     String token = "test-token";
 
-    GitHubRepoNavigator navigator = GitHubRepoNavigatorBuilder
+    GitHubRepository navigator = GitHubRepositoryBuilder
       .forRepository(repositoryUrl)
       .withPersonalAccessToken(token)
       .build();
 
     assertNotNull(navigator);
-    NavigatorConfig config = navigator.getConfig();
+    RepositoryConfig config = navigator.getConfig();
     assertEquals(repositoryUrl, config.getRepositoryUrl());
     assertTrue(config.getAuthConfig().isPresent());
     assertEquals(AuthenticationConfig.AuthenticationType.PERSONAL_ACCESS_TOKEN,
@@ -35,13 +35,13 @@ class GitHubRepoNavigatorBuilderTest {
     String repositoryUrl = "https://github.com/example/repo.git";
     String token = "oauth-token";
 
-    GitHubRepoNavigator navigator = GitHubRepoNavigatorBuilder
+    GitHubRepository navigator = GitHubRepositoryBuilder
       .forRepository(repositoryUrl)
       .withOAuthToken(token)
       .build();
 
     assertNotNull(navigator);
-    NavigatorConfig config = navigator.getConfig();
+    RepositoryConfig config = navigator.getConfig();
     assertTrue(config.getAuthConfig().isPresent());
     assertEquals(AuthenticationConfig.AuthenticationType.OAUTH,
       config.getAuthConfig().get().getType());
@@ -54,13 +54,13 @@ class GitHubRepoNavigatorBuilderTest {
     String username = "testuser";
     String password = "testpass";
 
-    GitHubRepoNavigator navigator = GitHubRepoNavigatorBuilder
+    GitHubRepository navigator = GitHubRepositoryBuilder
       .forRepository(repositoryUrl)
       .withUsernamePassword(username, password)
       .build();
 
     assertNotNull(navigator);
-    NavigatorConfig config = navigator.getConfig();
+    RepositoryConfig config = navigator.getConfig();
     assertTrue(config.getAuthConfig().isPresent());
     assertEquals(AuthenticationConfig.AuthenticationType.USERNAME_PASSWORD,
       config.getAuthConfig().get().getType());
@@ -76,7 +76,7 @@ class GitHubRepoNavigatorBuilderTest {
     String branch = "develop";
     String startingCommit = "abc123";
 
-    GitHubRepoNavigator navigator = GitHubRepoNavigatorBuilder
+    GitHubRepository navigator = GitHubRepositoryBuilder
       .forRepository(repositoryUrl)
       .withPersonalAccessToken(token)
       .localCloneDirectory(localPath)
@@ -87,7 +87,7 @@ class GitHubRepoNavigatorBuilderTest {
       .build();
 
     assertNotNull(navigator);
-    NavigatorConfig config = navigator.getConfig();
+    RepositoryConfig config = navigator.getConfig();
     assertEquals(repositoryUrl, config.getRepositoryUrl());
     assertEquals(Paths.get(localPath), config.getLocalCloneDirectory());
     assertEquals(Arrays.asList("*.java", "*.md"), config.getFileFilters());
@@ -101,13 +101,13 @@ class GitHubRepoNavigatorBuilderTest {
   void testBuilderWithoutAuthentication() {
     String repositoryUrl = "https://github.com/example/public-repo.git";
 
-    GitHubRepoNavigator navigator = GitHubRepoNavigatorBuilder
+    GitHubRepository navigator = GitHubRepositoryBuilder
       .forRepository(repositoryUrl)
       .branch("main")
       .build();
 
     assertNotNull(navigator);
-    NavigatorConfig config = navigator.getConfig();
+    RepositoryConfig config = navigator.getConfig();
     assertEquals(repositoryUrl, config.getRepositoryUrl());
     assertFalse(config.getAuthConfig().isPresent());
     assertEquals("main", config.getBranch());

@@ -1,6 +1,6 @@
 package edu.stanford.protege.commitnavigator;
 
-import edu.stanford.protege.commitnavigator.config.NavigatorConfig;
+import edu.stanford.protege.commitnavigator.config.RepositoryConfig;
 import edu.stanford.protege.commitnavigator.exceptions.GitHubNavigatorException;
 import edu.stanford.protege.commitnavigator.services.CommitNavigator;
 
@@ -13,7 +13,7 @@ import edu.stanford.protege.commitnavigator.services.CommitNavigator;
  * 
  * @since 1.0.0
  */
-public interface GitHubRepoNavigator {
+public interface GitHubRepository {
   
   /**
    * Initializes the repository navigator by cloning or opening the repository.
@@ -63,8 +63,8 @@ public interface GitHubRepoNavigator {
   /**
    * Retrieves the configuration used to create this navigator.
    * 
-   * @return the {@link NavigatorConfig} instance containing repository URL,
+   * @return the {@link RepositoryConfig} instance containing repository URL,
    *         authentication settings, file filters, and other configuration options
    */
-  NavigatorConfig getConfig();
+  RepositoryConfig getConfig();
 }
