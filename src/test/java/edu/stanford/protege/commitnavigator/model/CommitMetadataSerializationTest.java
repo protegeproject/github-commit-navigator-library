@@ -2,6 +2,8 @@ package edu.stanford.protege.commitnavigator.model;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 
@@ -9,53 +11,55 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class CommitMetadataSerializationTest {
 
-  @Test
-  void testRecordSerialization() throws Exception {
-    ObjectMapper mapper = new ObjectMapper();
-    mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+    private static final Logger logger = LoggerFactory.getLogger(CommitMetadataSerializationTest.class);
 
-    CommitMetadata original = new CommitMetadata(
-      "def456",
-      "recorduser",
-      Instant.parse("2023-06-15T10:30:00Z"),
-      "Record pattern commit"
-    );
+    @Test
+    void testRecordSerialization() throws Exception {
+        var mapper = new ObjectMapper();
+        mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
 
-    // Serialize to JSON
-    String json = mapper.writeValueAsString(original);
-    System.out.println("Record JSON: " + json);
+        var original = new CommitMetadata(
+                "def456",
+                "recorduser",
+                Instant.parse("2023-06-15T10:30:00Z"),
+                "Record pattern commit"
+        );
 
-    // Deserialize from JSON
-    CommitMetadata deserialized = mapper.readValue(json, CommitMetadata.class);
+        // Serialize to JSON
+        var json = mapper.writeValueAsString(original);
+        logger.debug("Record JSON: {}", json);
 
-    // Verify using record accessors
-    assertEquals(original.commitHash(), deserialized.commitHash());
-    assertEquals(original.committerUsername(), deserialized.committerUsername());
-    assertEquals(original.commitDate(), deserialized.commitDate());
-    assertEquals(original.commitMessage(), deserialized.commitMessage());
+        // Deserialize from JSON
+        var deserialized = mapper.readValue(json, CommitMetadata.class);
 
-    // Also test backward compatibility getters
-    assertEquals(original.getCommitHash(), deserialized.getCommitHash());
-    assertEquals(original.getCommitterUsername(), deserialized.getCommitterUsername());
-    assertEquals(original.getCommitDate(), deserialized.getCommitDate());
-    assertEquals(original.getCommitMessage(), deserialized.getCommitMessage());
-  }
+        // Verify using record accessors
+        assertEquals(original.commitHash(), deserialized.commitHash());
+        assertEquals(original.committerUsername(), deserialized.committerUsername());
+        assertEquals(original.commitDate(), deserialized.commitDate());
+        assertEquals(original.commitMessage(), deserialized.commitMessage());
 
-  @Test
-  void testRecordStringRepresentation() {
-    CommitMetadata commit = CommitMetadata.create(
-      "xyz789",
-      "recorduser",
-      Instant.parse("2023-12-01T14:45:30Z"),
-      "Record test commit"
-    );
+        // Also test backward compatibility getters
+        assertEquals(original.getCommitHash(), deserialized.getCommitHash());
+        assertEquals(original.getCommitterUsername(), deserialized.getCommitterUsername());
+        assertEquals(original.getCommitDate(), deserialized.getCommitDate());
+        assertEquals(original.getCommitMessage(), deserialized.getCommitMessage());
+    }
 
-    String toString = commit.toString();
-    System.out.println("Record toString: " + toString);
+    @Test
+    void testRecordStringRepresentation() {
+        var commit = CommitMetadata.create(
+                "xyz789",
+                "recorduser",
+                Instant.parse("2023-12-01T14:45:30Z"),
+                "Record test commit"
+        );
 
-    // Records provide meaningful toString
-    assertTrue(toString.contains("xyz789"));
-    assertTrue(toString.contains("recorduser"));
-    assertTrue(toString.contains("Record test commit"));
-  }
+        var toString = commit.toString();
+        logger.debug("Record toString: {}", toString);
+
+        // Records provide meaningful toString
+        assertTrue(toString.contains("xyz789"));
+        assertTrue(toString.contains("recorduser"));
+        assertTrue(toString.contains("Record test commit"));
+    }
 }
