@@ -43,21 +43,21 @@ import java.util.Objects;
  * <p>Usage example:</p>
  * <pre>
  * {@code
- * var navigator = GitHubRepoNavigatorBuilder
- *     .forRepository("https://github.com/user/repo.git")
+ * var coordinate = RepositoryCoordinate.create(repoName, repoName);
+ * var repository = GitHubRepositoryBuilderFactory.create(coordinate)
  *     .withPersonalAccessToken("token")
  *     .fileFilters("*.java")
  *     .build();
  *
- * navigator.initialize();
- * var commitNavigator = navigator.getCommitNavigator();
+ * repository.initialize();
+ * var commitNavigator = repository.getCommitNavigator();
  *
  * while (commitNavigator.hasNext()) {
  *     var commit = commitNavigator.next();
  *     // Process commit
  * }
  *
- * navigator.close();
+ * repository.close();
  * }
  * </pre>
  * 
@@ -70,7 +70,7 @@ public class GitHubRepositoryImpl implements GitHubRepository {
   private static final Logger logger = LoggerFactory.getLogger(GitHubRepositoryImpl.class);
 
   private final RepositoryConfig config;
-  private final AuthenticationManager authenticationManager;
+  private final AuthenticationManager authManager;
   private final FileChangeDetector fileChangeDetector;
 
   private Repository repository;
@@ -85,19 +85,19 @@ public class GitHubRepositoryImpl implements GitHubRepository {
    * <p>This constructor uses dependency injection to provide the required services
    * for repository operations, authentication, and file change detection.</p>
    * 
-   * @param config the navigation configuration containing repository URL, authentication,
-   *               and other navigation parameters
-   * @param authenticationManager the service for handling GitHub authentication
+   * @param config the repository configuration containing repository URL, authentication,
+   *               and other parameters
+   * @param authManager the service for handling GitHub authentication
    * @param fileChangeDetector the service for detecting file changes in commits
    * @throws NullPointerException if any parameter is null
    */
   @Inject
   public GitHubRepositoryImpl(RepositoryConfig config,
-                              AuthenticationManager authenticationManager,
+                              AuthenticationManager authManager,
                               FileChangeDetector fileChangeDetector) {
-    this.config = Objects.requireNonNull(config, "NavigatorConfig cannot be null");
-    this.authenticationManager = Objects.requireNonNull(authenticationManager, "AuthenticationManager cannot be null");
-    this.fileChangeDetector = Objects.requireNonNull(fileChangeDetector, "FileChangeDetector cannot be null");
+    this.config = Objects.requireNonNull(config, "Repository config cannot be null");
+    this.authManager = Objects.requireNonNull(authManager, "Authentication manager cannot be null");
+    this.fileChangeDetector = Objects.requireNonNull(fileChangeDetector, "File change detector cannot be null");
   }
 
   /**
@@ -105,7 +105,6 @@ public class GitHubRepositoryImpl implements GitHubRepository {
    *
    * <p>This method performs the following operations:</p>
    * <ul>
-   *   <li>Validates the configuration parameters</li>
    *   <li>Authenticates with GitHub using the provided credentials</li>
    *   <li>Sets up the local Git repository: a) clones the repository if it doesn't exist locally
    *       or b) opens existing local repository if already cloned</li>
@@ -121,7 +120,6 @@ public class GitHubRepositoryImpl implements GitHubRepository {
     logger.info("Initializing GitHub repository navigator for: {}", config.getRepositoryUrl());
 
     try {
-      validateConfig();
       authenticateWithGitHub();
       setupRepository();
       createCommitNavigator();
@@ -167,7 +165,7 @@ public class GitHubRepositoryImpl implements GitHubRepository {
       var fetchCommand = git.fetch();
       if (config.getAuthConfig().isPresent()) {
         fetchCommand.setCredentialsProvider(
-          authenticationManager.getCredentialsProvider(config.getAuthConfig().get())
+          authManager.getCredentialsProvider(config.getAuthConfig().get())
         );
       }
       fetchCommand.call();
@@ -211,24 +209,6 @@ public class GitHubRepositoryImpl implements GitHubRepository {
   }
 
   /**
-   * Validates the navigator configuration to ensure all required parameters are present.
-   * 
-   * @throws GitHubNavigatorException if the configuration is invalid
-   */
-  private void validateConfig() throws GitHubNavigatorException {
-    if (config == null) {
-      throw new GitHubNavigatorException("Configuration cannot be null");
-    }
-
-    if (config.getRepositoryUrl() == null || config.getRepositoryUrl().trim().isEmpty()) {
-      throw new GitHubNavigatorException("Repository URL cannot be null or empty");
-    }
-
-    // Authentication is optional for public repositories
-    logger.debug("Authentication config present: {}", config.getAuthConfig().isPresent());
-  }
-
-  /**
    * Authenticates with GitHub using the configured authentication method.
    * 
    * <p>If authentication configuration is provided, it will be validated and used
@@ -240,13 +220,13 @@ public class GitHubRepositoryImpl implements GitHubRepository {
     if (config.getAuthConfig().isPresent()) {
       logger.debug("Authenticating with GitHub using provided credentials");
 
-      authenticationManager.validateAuthentication(config.getAuthConfig().get());
-      github = authenticationManager.authenticateGitHub(config.getAuthConfig().get());
+      authManager.validateAuthentication(config.getAuthConfig().get());
+      github = authManager.authenticateGitHub(config.getAuthConfig().get());
 
       logger.debug("Successfully authenticated with GitHub");
     } else {
       logger.debug("No authentication provided, connecting to GitHub anonymously for public repository access");
-      github = authenticationManager.authenticateGitHub(null);
+      github = authManager.authenticateGitHub(null);
     }
   }
 
@@ -369,7 +349,7 @@ public class GitHubRepositoryImpl implements GitHubRepository {
       var fetchCommand = git.fetch();
       if (config.getAuthConfig().isPresent()) {
         fetchCommand.setCredentialsProvider(
-          authenticationManager.getCredentialsProvider(config.getAuthConfig().get())
+          authManager.getCredentialsProvider(config.getAuthConfig().get())
         );
       }
       fetchCommand.call();
@@ -388,7 +368,7 @@ public class GitHubRepositoryImpl implements GitHubRepository {
         var pullCommand = git.pull();
         if (config.getAuthConfig().isPresent()) {
           pullCommand.setCredentialsProvider(
-            authenticationManager.getCredentialsProvider(config.getAuthConfig().get())
+            authManager.getCredentialsProvider(config.getAuthConfig().get())
           );
         }
         var pullResult = pullCommand.call();
@@ -432,7 +412,7 @@ public class GitHubRepositoryImpl implements GitHubRepository {
 
     if (config.getAuthConfig().isPresent()) {
       cloneCommand.setCredentialsProvider(
-        authenticationManager.getCredentialsProvider(config.getAuthConfig().get())
+        authManager.getCredentialsProvider(config.getAuthConfig().get())
       );
     }
 

@@ -2,11 +2,16 @@ package edu.stanford.protege.commitnavigator;
 
 import edu.stanford.protege.commitnavigator.config.AuthenticationConfig;
 import edu.stanford.protege.commitnavigator.config.RepositoryConfig;
+import edu.stanford.protege.commitnavigator.impl.GitHubRepositoryImpl;
+import edu.stanford.protege.commitnavigator.model.RepositoryCoordinate;
+import edu.stanford.protege.commitnavigator.services.AuthenticationManager;
+import edu.stanford.protege.commitnavigator.services.FileChangeDetector;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Builder class for creating {@link GitHubRepository} instances with flexible configuration options.
@@ -34,19 +39,15 @@ import java.util.List;
 public class GitHubRepositoryBuilder {
   private final RepositoryConfig.Builder configBuilder;
 
-  private GitHubRepositoryBuilder(String repositoryUrl) {
-    this.configBuilder = RepositoryConfig.builder(repositoryUrl);
-  }
+  private final AuthenticationManager authManager;
+  private final FileChangeDetector fileChangeDetector;
 
-  /**
-   * Creates a new builder instance for the specified repository URL.
-   * 
-   * @param repositoryUrl the GitHub repository URL (HTTPS or SSH format)
-   * @return a new {@link GitHubRepositoryBuilder} instance
-   * @throws NullPointerException if repositoryUrl is null
-   */
-  public static GitHubRepositoryBuilder forRepository(String repositoryUrl) {
-    return new GitHubRepositoryBuilder(repositoryUrl);
+  public GitHubRepositoryBuilder(RepositoryCoordinate repositoryCoordinate,
+                                  AuthenticationManager authManager,
+                                  FileChangeDetector fileChangeDetector) {
+    this.configBuilder = RepositoryConfig.builder(repositoryCoordinate);
+    this.authManager = Objects.requireNonNull(authManager, "Authentication manager cannot be null");
+    this.fileChangeDetector = Objects.requireNonNull(fileChangeDetector, "File change detector cannot be null");
   }
 
   /**
@@ -145,17 +146,6 @@ public class GitHubRepositoryBuilder {
   }
 
   /**
-   * Specifies the branch to navigate through.
-   * 
-   * @param branch the branch name (defaults to "main" if not specified)
-   * @return this builder instance for method chaining
-   */
-  public GitHubRepositoryBuilder branch(String branch) {
-    configBuilder.branch(branch);
-    return this;
-  }
-
-  /**
    * Specifies the commit hash to start navigation from.
    * 
    * @param commitHash the full or abbreviated commit hash
@@ -191,6 +181,6 @@ public class GitHubRepositoryBuilder {
    */
   public GitHubRepository build() {
     var config = configBuilder.build();
-    return GitHubRepositoryFactory.create(config);
+    return new GitHubRepositoryImpl(config, authManager, fileChangeDetector);
   }
 }

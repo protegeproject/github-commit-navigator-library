@@ -1,6 +1,7 @@
 package edu.stanford.protege.commitnavigator.cli;
 
-import edu.stanford.protege.commitnavigator.GitHubRepositoryBuilder;
+import edu.stanford.protege.commitnavigator.GitHubRepositoryBuilderFactory;
+import edu.stanford.protege.commitnavigator.model.RepositoryCoordinate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
@@ -48,7 +49,7 @@ public class GitHubNavigatorCli implements Callable<Integer> {
   @Option(names = {"-b", "--branch"}, description = "The branch to use (default: ${DEFAULT-VALUE})", defaultValue = "main")
   private String branch;
 
-  @Option(names = {"-d", "--clone-directory"}, description = "Local directory path where the repository will be cloned (defaults to temp directory)")
+  @Option(names = {"-d", "--clone-directory"}, description = "Local directory path where the repository will be cloned (defaults to system temp directory)")
   private String cloneDirectory;
 
   @Option(names = {"-f", "--file-filter"}, description = "File filter pattern (e.g., '*.java' or '*.java,*.md' for multiple filters)")
@@ -75,18 +76,17 @@ public class GitHubNavigatorCli implements Callable<Integer> {
    */
   @Override
   public Integer call() throws Exception {
-    // Set default clone directory to system temp directory if not provided
-    if (cloneDirectory == null) {
-      var repoName = extractRepositoryName(repositoryUrl);
-      cloneDirectory = System.getProperty("java.io.tmpdir") + repoName;
-    }
-    System.out.println("Clone directory: " + cloneDirectory + "\n");
-
     try {
-      var builder = GitHubRepositoryBuilder
-        .forRepository(repositoryUrl)
-        .localCloneDirectory(cloneDirectory)
-        .branch(branch);
+      // Extract repository coordinate from URL
+      var coordinate = RepositoryCoordinate.createFromUrl(repositoryUrl, branch);
+      
+      // Create repositoryBuilder using factory pattern
+      var repositoryBuilder = GitHubRepositoryBuilderFactory.create(coordinate);
+
+      if (cloneDirectory != null) {
+        // Configure additional options
+        repositoryBuilder.localCloneDirectory(cloneDirectory);
+      }
 
       // Add file filters if provided, otherwise use default filters
       if (fileFilter != null && !fileFilter.trim().isEmpty()) {
@@ -94,19 +94,14 @@ public class GitHubNavigatorCli implements Callable<Integer> {
         for (int i = 0; i < filters.length; i++) {
           filters[i] = filters[i].trim();
         }
-        builder.fileFilters(filters);
+        repositoryBuilder.fileFilters(filters);
       }
 
-      // Add authentication only if token is provided
-      if (token != null && !token.trim().isEmpty()) {
-        builder.withPersonalAccessToken(token);
-      }
+      var repository = repositoryBuilder.build();
 
-      var navigator = builder.build();
+      repository.initialize();
 
-      navigator.initialize();
-
-      var commitNavigator = navigator.getCommitNavigator();
+      var commitNavigator = repository.getCommitNavigator();
 
       while (commitNavigator.hasPrevious()) {
         var commit = commitNavigator.previous();
@@ -116,7 +111,7 @@ public class GitHubNavigatorCli implements Callable<Integer> {
           "   " + commit.getCommitMessage().trim() + "\n");
       }
 
-      navigator.close();
+      repository.close();
 
       return 0; // Success
 
@@ -125,20 +120,5 @@ public class GitHubNavigatorCli implements Callable<Integer> {
       System.err.println("Error: " + e.getMessage());
       return 1; // Error
     }
-  }
-
-  /**
-   * Extracts the repository name from a GitHub repository URL.
-   * 
-   * @param repositoryUrl the GitHub repository URL
-   * @return the repository name without the .git suffix
-   */
-  private static String extractRepositoryName(String repositoryUrl) {
-    var parts = repositoryUrl.split("/");
-    var repoName = parts[parts.length - 1];
-    if (repoName.endsWith(".git")) {
-      repoName = repoName.substring(0, repoName.length() - 4);
-    }
-    return repoName;
   }
 }

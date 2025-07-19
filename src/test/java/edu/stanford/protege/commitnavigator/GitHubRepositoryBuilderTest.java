@@ -2,6 +2,7 @@ package edu.stanford.protege.commitnavigator;
 
 import edu.stanford.protege.commitnavigator.config.AuthenticationConfig;
 import edu.stanford.protege.commitnavigator.config.RepositoryConfig;
+import edu.stanford.protege.commitnavigator.model.RepositoryCoordinate;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Paths;
@@ -11,19 +12,21 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class GitHubRepositoryBuilderTest {
 
+  private static final RepositoryCoordinate TEST_COORDINATE = 
+      RepositoryCoordinate.create("example", "repo");
+
   @Test
   void testBuilderWithPersonalAccessToken() {
-    String repositoryUrl = "https://github.com/example/repo.git";
     String token = "test-token";
 
-    GitHubRepository navigator = GitHubRepositoryBuilder
-      .forRepository(repositoryUrl)
+    GitHubRepository navigator = GitHubRepositoryBuilderFactory
+      .create(TEST_COORDINATE)
       .withPersonalAccessToken(token)
       .build();
 
     assertNotNull(navigator);
     RepositoryConfig config = navigator.getConfig();
-    assertEquals(repositoryUrl, config.getRepositoryUrl());
+    assertEquals("https://github.com/example/repo.git", config.getRepositoryUrl());
     assertTrue(config.getAuthConfig().isPresent());
     assertEquals(AuthenticationConfig.AuthenticationType.PERSONAL_ACCESS_TOKEN,
       config.getAuthConfig().get().getType());
@@ -32,11 +35,10 @@ class GitHubRepositoryBuilderTest {
 
   @Test
   void testBuilderWithOAuthToken() {
-    String repositoryUrl = "https://github.com/example/repo.git";
     String token = "oauth-token";
 
-    GitHubRepository navigator = GitHubRepositoryBuilder
-      .forRepository(repositoryUrl)
+    GitHubRepository navigator = GitHubRepositoryBuilderFactory
+      .create(TEST_COORDINATE)
       .withOAuthToken(token)
       .build();
 
@@ -50,12 +52,11 @@ class GitHubRepositoryBuilderTest {
 
   @Test
   void testBuilderWithUsernamePassword() {
-    String repositoryUrl = "https://github.com/example/repo.git";
     String username = "testuser";
     String password = "testpass";
 
-    GitHubRepository navigator = GitHubRepositoryBuilder
-      .forRepository(repositoryUrl)
+    GitHubRepository navigator = GitHubRepositoryBuilderFactory
+      .create(TEST_COORDINATE)
       .withUsernamePassword(username, password)
       .build();
 
@@ -70,25 +71,24 @@ class GitHubRepositoryBuilderTest {
 
   @Test
   void testBuilderWithAllOptions() {
-    String repositoryUrl = "https://github.com/example/repo.git";
     String token = "test-token";
     String localPath = "/tmp/test-repo";
     String branch = "develop";
     String startingCommit = "abc123";
+    RepositoryCoordinate coordinate = RepositoryCoordinate.create("example", "repo", branch);
 
-    GitHubRepository navigator = GitHubRepositoryBuilder
-      .forRepository(repositoryUrl)
+    GitHubRepository navigator = GitHubRepositoryBuilderFactory
+      .create(coordinate)
       .withPersonalAccessToken(token)
       .localCloneDirectory(localPath)
       .fileFilters("*.java", "*.md")
-      .branch(branch)
       .startingCommit(startingCommit)
       .shallowClone(true)
       .build();
 
     assertNotNull(navigator);
     RepositoryConfig config = navigator.getConfig();
-    assertEquals(repositoryUrl, config.getRepositoryUrl());
+    assertEquals("https://github.com/example/repo.git", config.getRepositoryUrl());
     assertEquals(Paths.get(localPath), config.getLocalCloneDirectory());
     assertEquals(Arrays.asList("*.java", "*.md"), config.getFileFilters());
     assertEquals(branch, config.getBranch());
@@ -99,16 +99,15 @@ class GitHubRepositoryBuilderTest {
 
   @Test
   void testBuilderWithoutAuthentication() {
-    String repositoryUrl = "https://github.com/example/public-repo.git";
+    RepositoryCoordinate publicRepoCoordinate = RepositoryCoordinate.create("example", "public-repo");
 
-    GitHubRepository navigator = GitHubRepositoryBuilder
-      .forRepository(repositoryUrl)
-      .branch("main")
+    GitHubRepository navigator = GitHubRepositoryBuilderFactory
+      .create(publicRepoCoordinate)
       .build();
 
     assertNotNull(navigator);
     RepositoryConfig config = navigator.getConfig();
-    assertEquals(repositoryUrl, config.getRepositoryUrl());
+    assertEquals("https://github.com/example/public-repo.git", config.getRepositoryUrl());
     assertFalse(config.getAuthConfig().isPresent());
     assertEquals("main", config.getBranch());
   }

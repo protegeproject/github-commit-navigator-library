@@ -1,5 +1,6 @@
 package edu.stanford.protege.commitnavigator.config;
 
+import edu.stanford.protege.commitnavigator.model.RepositoryCoordinate;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Paths;
@@ -11,22 +12,20 @@ class RepositoryConfigTest {
 
   @Test
   void testBuilderPattern() {
-    String repositoryUrl = "https://github.com/example/repo.git";
-    String branch = "develop";
     String startingCommit = "abc123";
+    RepositoryCoordinate coordinate = RepositoryCoordinate.create("example", "repo", "develop");
 
-    RepositoryConfig config = RepositoryConfig.builder(repositoryUrl)
+    RepositoryConfig config = RepositoryConfig.builder(coordinate)
       .localCloneDirectory(Paths.get("/tmp/test"))
       .fileFilters(Arrays.asList("*.java", "*.md"))
-      .branch(branch)
       .startingCommit(startingCommit)
       .shallowClone(true)
       .build();
 
-    assertEquals(repositoryUrl, config.getRepositoryUrl());
+    assertEquals("https://github.com/example/repo.git", config.getRepositoryUrl());
     assertEquals(Paths.get("/tmp/test"), config.getLocalCloneDirectory());
     assertEquals(Arrays.asList("*.java", "*.md"), config.getFileFilters());
-    assertEquals(branch, config.getBranch());
+    assertEquals("develop", config.getBranch());
     assertTrue(config.getStartingCommit().isPresent());
     assertEquals(startingCommit, config.getStartingCommit().get());
     assertTrue(config.isShallowClone());
@@ -34,13 +33,13 @@ class RepositoryConfigTest {
 
   @Test
   void testDefaultValues() {
-    String repositoryUrl = "https://github.com/example/repo.git";
+    RepositoryCoordinate coordinate = RepositoryCoordinate.create("example", "repo");
 
-    RepositoryConfig config = RepositoryConfig.builder(repositoryUrl)
+    RepositoryConfig config = RepositoryConfig.builder(coordinate)
       .build();
 
-    assertEquals(repositoryUrl, config.getRepositoryUrl());
-    assertNull(config.getLocalCloneDirectory());
+    assertEquals("https://github.com/example/repo.git", config.getRepositoryUrl());
+    assertNotNull(config.getLocalCloneDirectory()); // Default directory is set
     assertNull(config.getFileFilters());
     assertEquals("main", config.getBranch());
     assertFalse(config.getStartingCommit().isPresent());
@@ -50,10 +49,10 @@ class RepositoryConfigTest {
 
   @Test
   void testAuthenticationConfig() {
-    String repositoryUrl = "https://github.com/example/repo.git";
+    RepositoryCoordinate coordinate = RepositoryCoordinate.create("example", "repo");
     AuthenticationConfig authConfig = AuthenticationConfig.personalAccessToken("token").build();
 
-    RepositoryConfig config = RepositoryConfig.builder(repositoryUrl)
+    RepositoryConfig config = RepositoryConfig.builder(coordinate)
       .authConfig(authConfig)
       .build();
 

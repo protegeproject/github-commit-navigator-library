@@ -1,5 +1,7 @@
 package edu.stanford.protege.commitnavigator.config;
 
+import edu.stanford.protege.commitnavigator.model.RepositoryCoordinate;
+
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
@@ -28,7 +30,8 @@ import java.util.Optional;
  * @since 1.0.0
  */
 public class RepositoryConfig {
-  private final String repositoryUrl;
+  private final String repoUrl;
+  private final String repoName;
   private final Path localCloneDirectory;
   private final List<String> fileFilters;
   private final String branch;
@@ -37,10 +40,11 @@ public class RepositoryConfig {
   private final AuthenticationConfig authConfig;
 
   private RepositoryConfig(Builder builder) {
-    this.repositoryUrl = Objects.requireNonNull(builder.repositoryUrl, "Repository URL cannot be null");
+    this.repoUrl = Objects.requireNonNull(builder.repoUrl, "Repository URL cannot be null");
+    this.repoName = Objects.requireNonNull(builder.repoName, "Repository name cannot be null");
+    this.branch = Objects.requireNonNull(builder.branch, "Branch cannot be null");
     this.localCloneDirectory = builder.localCloneDirectory;
     this.fileFilters = builder.fileFilters;
-    this.branch = Objects.requireNonNull(builder.branch, "Branch cannot be null");
     this.startingCommit = builder.startingCommit;
     this.shallowClone = builder.shallowClone;
     this.authConfig = builder.authConfig;
@@ -52,7 +56,16 @@ public class RepositoryConfig {
    * @return the repository URL (HTTPS or SSH format)
    */
   public String getRepositoryUrl() {
-    return repositoryUrl;
+    return repoUrl;
+  }
+
+  /**
+   * Returns the name of the repository.
+   *
+   * @return the repository name.
+   */
+  public String getRepositoryName() {
+    return repoName;
   }
 
   /**
@@ -112,12 +125,14 @@ public class RepositoryConfig {
   /**
    * Creates a new builder instance for the specified repository URL.
    * 
-   * @param repositoryUrl the GitHub repository URL
+   * @param repositoryCoordinate the repository coordinate containing owner, repo, and branch
    * @return a new {@link Builder} instance
    * @throws NullPointerException if repositoryUrl is null
    */
-  public static Builder builder(String repositoryUrl) {
-    return new Builder(repositoryUrl);
+  public static Builder builder(RepositoryCoordinate repositoryCoordinate) {
+    return new Builder(repositoryCoordinate.gitHubUrl(),
+        repositoryCoordinate.repositoryName(),
+        repositoryCoordinate.branchName());
   }
 
   /**
@@ -125,19 +140,23 @@ public class RepositoryConfig {
    */
   public static class Builder {
 
-    private static final String DEFAULT_BRANCH_NAME = "main";
     private static final boolean DEFAULT_SHALLOW_CLONE = false;
 
-    private final String repositoryUrl;
+    private final String repoUrl;
+    private final String repoName;
+    private final String branch;
+
     private Path localCloneDirectory;
     private List<String> fileFilters;
-    private String branch = DEFAULT_BRANCH_NAME;
     private String startingCommit;
     private boolean shallowClone = DEFAULT_SHALLOW_CLONE;
     private AuthenticationConfig authConfig;
 
-    private Builder(String repositoryUrl) {
-      this.repositoryUrl = Objects.requireNonNull(repositoryUrl, "Repository URL cannot be null");
+    private Builder(String repositoryUrl, String repoName, String branchName) {
+      this.repoUrl = Objects.requireNonNull(repositoryUrl, "Repository URL cannot be null");
+      this.repoName = Objects.requireNonNull(repoName, "Repository name cannot be null");
+      this.branch = Objects.requireNonNull(branchName, "Branch name cannot be null");
+      this.localCloneDirectory = Path.of(System.getProperty("java.io.tmpdir"), repoName); // default clone directory
     }
 
     /**
@@ -159,17 +178,6 @@ public class RepositoryConfig {
      */
     public Builder fileFilters(List<String> fileFilters) {
       this.fileFilters = fileFilters;
-      return this;
-    }
-
-    /**
-     * Sets the branch to navigate through.
-     * 
-     * @param branch the branch name
-     * @return this builder instance for method chaining
-     */
-    public Builder branch(String branch) {
-      this.branch = branch;
       return this;
     }
 
