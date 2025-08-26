@@ -18,7 +18,6 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
-import org.kohsuke.github.GitHub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,7 +73,6 @@ public class GitHubRepositoryImpl implements GitHubRepository {
 
   private Repository repository;
   private Git git;
-  private GitHub github;
   private CommitNavigator commitNavigator;
   private boolean initialized = false;
 
@@ -129,9 +127,9 @@ public class GitHubRepositoryImpl implements GitHubRepository {
       initialized = true;
       logger.info("Successfully initialized GitHub repository navigator");
 
-    } catch (Exception e) {
+    } catch (GitHubNavigatorException e) {
       cleanup();
-      throw new GitHubNavigatorException("Failed to initialize repository navigator", e);
+      throw e;
     }
   }
 
@@ -139,7 +137,6 @@ public class GitHubRepositoryImpl implements GitHubRepository {
    * Retrieves the commit navigator for traversing repository commits.
    *
    * @return a {@link CommitNavigator} instance for commit traversal
-   * @throws GitHubNavigatorException
    */
   @Override
   public CommitNavigator getCommitNavigator() throws GitHubNavigatorException {
@@ -222,13 +219,13 @@ public class GitHubRepositoryImpl implements GitHubRepository {
       logger.debug("Authenticating with GitHub using provided credentials");
 
       authManager.validateAuthentication(config.getAuthConfig().get());
-      github = authManager.authenticateGitHub(config.getAuthConfig().get());
+      authManager.authenticateGitHub(config.getAuthConfig().get());
 
       logger.debug("Successfully authenticated with GitHub");
     } else {
       logger.debug(
           "No authentication provided, connecting to GitHub anonymously for public repository access");
-      github = authManager.authenticateGitHub(null);
+      authManager.authenticateGitHub(null);
     }
   }
 
@@ -250,8 +247,10 @@ public class GitHubRepositoryImpl implements GitHubRepository {
         cloneRepository(localPath);
       }
 
-    } catch (Exception e) {
+    } catch (IOException | GitAPIException e) {
       throw new GitHubNavigatorException("Failed to setup repository", e);
+    } catch (AuthenticationException e) {
+      throw new GitHubNavigatorException("Authentication failed during repository setup", e);
     }
   }
 
@@ -409,7 +408,10 @@ public class GitHubRepositoryImpl implements GitHubRepository {
    */
   private void cloneRepository(Path localPath)
       throws GitAPIException, AuthenticationException, IOException {
-    Files.createDirectories(localPath.getParent());
+    var parent = localPath.getParent();
+    if (parent != null) {
+      Files.createDirectories(parent);
+    }
 
     var cloneCommand = Git.cloneRepository();
     cloneCommand.setURI(config.getRepositoryUrl());
