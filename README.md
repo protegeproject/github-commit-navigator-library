@@ -160,3 +160,15 @@ mvn test
 # Create JAR
 mvn package
 ```
+
+### Code Quality and Formatting
+```bash
+# Auto-format code with Google Java Style
+mvn spotless:apply
+
+# Check code formatting
+mvn spotless:check
+
+# Run static analysis with SpotBugs
+mvn spotbugs:check
+```
