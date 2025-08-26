@@ -1,4 +1,4 @@
-package edu.stanford.protege.commitnavigator.services;
+package edu.stanford.protege.commitnavigator.utils;
 
 import edu.stanford.protege.commitnavigator.config.AuthenticationConfig;
 import edu.stanford.protege.commitnavigator.exceptions.AuthenticationException;

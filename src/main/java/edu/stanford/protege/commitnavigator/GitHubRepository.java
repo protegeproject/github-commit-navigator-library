@@ -2,7 +2,7 @@ package edu.stanford.protege.commitnavigator;
 
 import edu.stanford.protege.commitnavigator.config.RepositoryConfig;
 import edu.stanford.protege.commitnavigator.exceptions.GitHubNavigatorException;
-import edu.stanford.protege.commitnavigator.services.CommitNavigator;
+import edu.stanford.protege.commitnavigator.utils.CommitNavigator;
 
 /**
  * Primary interface for navigating GitHub repository commits with file filtering and authentication support.

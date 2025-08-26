@@ -1,8 +1,8 @@
-package edu.stanford.protege.commitnavigator.services.impl;
+package edu.stanford.protege.commitnavigator.utils.impl;
 
 import edu.stanford.protege.commitnavigator.config.AuthenticationConfig;
 import edu.stanford.protege.commitnavigator.exceptions.AuthenticationException;
-import edu.stanford.protege.commitnavigator.services.AuthenticationManager;
+import edu.stanford.protege.commitnavigator.utils.AuthenticationManager;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.kohsuke.github.GitHub;

@@ -1,7 +1,7 @@
-package edu.stanford.protege.commitnavigator.services.impl;
+package edu.stanford.protege.commitnavigator.utils.impl;
 
 import edu.stanford.protege.commitnavigator.exceptions.RepositoryException;
-import edu.stanford.protege.commitnavigator.services.FileChangeDetector;
+import edu.stanford.protege.commitnavigator.utils.FileChangeDetector;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
 import org.eclipse.jgit.lib.Repository;

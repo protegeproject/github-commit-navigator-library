@@ -1,4 +1,4 @@
-package edu.stanford.protege.commitnavigator.services.impl;
+package edu.stanford.protege.commitnavigator.utils.impl;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

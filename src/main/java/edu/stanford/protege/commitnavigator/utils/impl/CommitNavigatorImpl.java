@@ -1,10 +1,10 @@
-package edu.stanford.protege.commitnavigator.services.impl;
+package edu.stanford.protege.commitnavigator.utils.impl;
 
 import edu.stanford.protege.commitnavigator.config.RepositoryConfig;
 import edu.stanford.protege.commitnavigator.exceptions.RepositoryException;
 import edu.stanford.protege.commitnavigator.model.CommitMetadata;
-import edu.stanford.protege.commitnavigator.services.CommitNavigator;
-import edu.stanford.protege.commitnavigator.services.FileChangeDetector;
+import edu.stanford.protege.commitnavigator.utils.CommitNavigator;
+import edu.stanford.protege.commitnavigator.utils.FileChangeDetector;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;

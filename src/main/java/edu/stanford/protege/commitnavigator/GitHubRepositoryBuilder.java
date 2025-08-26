@@ -4,8 +4,8 @@ import edu.stanford.protege.commitnavigator.config.AuthenticationConfig;
 import edu.stanford.protege.commitnavigator.config.RepositoryConfig;
 import edu.stanford.protege.commitnavigator.impl.GitHubRepositoryImpl;
 import edu.stanford.protege.commitnavigator.model.RepositoryCoordinate;
-import edu.stanford.protege.commitnavigator.services.AuthenticationManager;
-import edu.stanford.protege.commitnavigator.services.FileChangeDetector;
+import edu.stanford.protege.commitnavigator.utils.AuthenticationManager;
+import edu.stanford.protege.commitnavigator.utils.FileChangeDetector;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;

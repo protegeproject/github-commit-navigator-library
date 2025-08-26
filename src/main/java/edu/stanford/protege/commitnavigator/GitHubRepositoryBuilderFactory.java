@@ -1,10 +1,10 @@
 package edu.stanford.protege.commitnavigator;
 
 import edu.stanford.protege.commitnavigator.model.RepositoryCoordinate;
-import edu.stanford.protege.commitnavigator.services.AuthenticationManager;
-import edu.stanford.protege.commitnavigator.services.FileChangeDetector;
-import edu.stanford.protege.commitnavigator.services.impl.AuthenticationManagerImpl;
-import edu.stanford.protege.commitnavigator.services.impl.FileChangeDetectorImpl;
+import edu.stanford.protege.commitnavigator.utils.AuthenticationManager;
+import edu.stanford.protege.commitnavigator.utils.FileChangeDetector;
+import edu.stanford.protege.commitnavigator.utils.impl.AuthenticationManagerImpl;
+import edu.stanford.protege.commitnavigator.utils.impl.FileChangeDetectorImpl;
 
 import java.util.Objects;
 
