@@ -1,5 +1,6 @@
 package edu.stanford.protege.commitnavigator.config;
 
+import com.google.common.collect.ImmutableList;
 import edu.stanford.protege.commitnavigator.model.RepositoryCoordinate;
 import java.nio.file.Path;
 import java.util.List;
@@ -81,7 +82,7 @@ public class RepositoryConfig {
    * @return the list of file filter patterns, or null if no filters are specified
    */
   public List<String> getFileFilters() {
-    return fileFilters;
+    return fileFilters != null ? ImmutableList.copyOf(fileFilters) : null;
   }
 
   /**
@@ -176,7 +177,7 @@ public class RepositoryConfig {
      * @return this builder instance for method chaining
      */
     public Builder fileFilters(List<String> fileFilters) {
-      this.fileFilters = fileFilters;
+      this.fileFilters = fileFilters != null ? ImmutableList.copyOf(fileFilters) : null;
       return this;
     }
 
