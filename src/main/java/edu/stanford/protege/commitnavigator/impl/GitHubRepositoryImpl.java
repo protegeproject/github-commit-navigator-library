@@ -408,11 +408,6 @@ public class GitHubRepositoryImpl implements GitHubRepository {
    */
   private void cloneRepository(Path localPath)
       throws GitAPIException, AuthenticationException, IOException {
-    var parent = localPath.getParent();
-    if (parent != null) {
-      Files.createDirectories(parent);
-    }
-
     var cloneCommand = Git.cloneRepository();
     cloneCommand.setURI(config.getRepositoryUrl());
     cloneCommand.setDirectory(localPath.toFile());
