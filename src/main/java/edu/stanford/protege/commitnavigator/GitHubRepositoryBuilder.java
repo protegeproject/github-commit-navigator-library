@@ -3,7 +3,7 @@ package edu.stanford.protege.commitnavigator;
 import edu.stanford.protege.commitnavigator.config.AuthenticationConfig;
 import edu.stanford.protege.commitnavigator.config.RepositoryConfig;
 import edu.stanford.protege.commitnavigator.impl.GitHubRepositoryImpl;
-import edu.stanford.protege.commitnavigator.model.RepositoryCoordinate;
+import edu.stanford.protege.commitnavigator.model.RepositoryCoordinates;
 import edu.stanford.protege.commitnavigator.utils.AuthenticationManager;
 import edu.stanford.protege.commitnavigator.utils.FileChangeDetector;
 import java.nio.file.Path;
@@ -42,10 +42,10 @@ public class GitHubRepositoryBuilder {
   private final FileChangeDetector fileChangeDetector;
 
   public GitHubRepositoryBuilder(
-      RepositoryCoordinate repositoryCoordinate,
+      RepositoryCoordinates repositoryCoordinates,
       AuthenticationManager authManager,
       FileChangeDetector fileChangeDetector) {
-    this.configBuilder = RepositoryConfig.builder(repositoryCoordinate);
+    this.configBuilder = RepositoryConfig.builder(repositoryCoordinates);
     this.authManager = Objects.requireNonNull(authManager, "Authentication manager cannot be null");
     this.fileChangeDetector =
         Objects.requireNonNull(fileChangeDetector, "File change detector cannot be null");

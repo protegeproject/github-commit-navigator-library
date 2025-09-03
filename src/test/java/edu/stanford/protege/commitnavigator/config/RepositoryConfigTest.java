@@ -2,7 +2,7 @@ package edu.stanford.protege.commitnavigator.config;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import edu.stanford.protege.commitnavigator.model.RepositoryCoordinate;
+import edu.stanford.protege.commitnavigator.model.RepositoryCoordinates;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
@@ -12,7 +12,7 @@ class RepositoryConfigTest {
   @Test
   void testBuilderPattern() {
     var startingCommit = "abc123";
-    var coordinate = RepositoryCoordinate.create("example", "repo", "develop");
+    var coordinate = RepositoryCoordinates.create("example", "repo", "develop");
 
     var config =
         RepositoryConfig.builder(coordinate)
@@ -33,7 +33,7 @@ class RepositoryConfigTest {
 
   @Test
   void testDefaultValues() {
-    var coordinate = RepositoryCoordinate.create("example", "repo");
+    var coordinate = RepositoryCoordinates.create("example", "repo");
 
     var config = RepositoryConfig.builder(coordinate).build();
 
@@ -48,7 +48,7 @@ class RepositoryConfigTest {
 
   @Test
   void testAuthenticationConfig() {
-    var coordinate = RepositoryCoordinate.create("example", "repo");
+    var coordinate = RepositoryCoordinates.create("example", "repo");
     var authConfig = AuthenticationConfig.personalAccessToken("token").build();
 
     var config = RepositoryConfig.builder(coordinate).authConfig(authConfig).build();

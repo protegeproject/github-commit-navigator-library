@@ -1,7 +1,7 @@
 package edu.stanford.protege.commitnavigator.config;
 
 import com.google.common.collect.ImmutableList;
-import edu.stanford.protege.commitnavigator.model.RepositoryCoordinate;
+import edu.stanford.protege.commitnavigator.model.RepositoryCoordinates;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
@@ -125,15 +125,15 @@ public class RepositoryConfig {
   /**
    * Creates a new builder instance for the specified repository URL.
    *
-   * @param repositoryCoordinate the repository coordinate containing owner, repo, and branch
+   * @param repositoryCoordinates the repository coordinate containing owner, repo, and branch
    * @return a new {@link Builder} instance
    * @throws NullPointerException if repositoryUrl is null
    */
-  public static Builder builder(RepositoryCoordinate repositoryCoordinate) {
+  public static Builder builder(RepositoryCoordinates repositoryCoordinates) {
     return new Builder(
-        repositoryCoordinate.gitHubUrl(),
-        repositoryCoordinate.repositoryName(),
-        repositoryCoordinate.branchName());
+        repositoryCoordinates.gitHubUrl(),
+        repositoryCoordinates.repositoryName(),
+        repositoryCoordinates.branchName());
   }
 
   /** Builder class for constructing {@link RepositoryConfig} instances. */

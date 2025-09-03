@@ -1,6 +1,6 @@
 package edu.stanford.protege.commitnavigator;
 
-import edu.stanford.protege.commitnavigator.model.RepositoryCoordinate;
+import edu.stanford.protege.commitnavigator.model.RepositoryCoordinates;
 import edu.stanford.protege.commitnavigator.utils.AuthenticationManager;
 import edu.stanford.protege.commitnavigator.utils.FileChangeDetector;
 import edu.stanford.protege.commitnavigator.utils.impl.AuthenticationManagerImpl;
@@ -36,16 +36,16 @@ public class GitHubRepositoryBuilderFactory {
    * {@link FileChangeDetector}, with the repository URL and branch pre-configured based on the
    * provided coordinate.
    *
-   * @param repositoryCoordinate the repository coordinate containing owner, repo, and branch
+   * @param repositoryCoordinates the repository coordinate containing owner, repo, and branch
    * @return a pre-configured {@link GitHubRepositoryBuilder} for public repository access
    * @throws NullPointerException if repositoryCoordinate is null
    */
-  public static GitHubRepositoryBuilder create(RepositoryCoordinate repositoryCoordinate) {
-    Objects.requireNonNull(repositoryCoordinate, "Repository coordinate cannot be null");
+  public static GitHubRepositoryBuilder create(RepositoryCoordinates repositoryCoordinates) {
+    Objects.requireNonNull(repositoryCoordinates, "Repository coordinate cannot be null");
 
     var authManager = new AuthenticationManagerImpl();
     var fileChangeDetector = new FileChangeDetectorImpl();
 
-    return new GitHubRepositoryBuilder(repositoryCoordinate, authManager, fileChangeDetector);
+    return new GitHubRepositoryBuilder(repositoryCoordinates, authManager, fileChangeDetector);
   }
 }

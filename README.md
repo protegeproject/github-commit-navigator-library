@@ -26,12 +26,12 @@ A modern Java library for navigating GitHub repository commits programmatically 
 ```java
 import edu.stanford.protege.commitnavigator.GitHubRepository;
 import edu.stanford.protege.commitnavigator.GitHubRepositoryBuilderFactory;
-import edu.stanford.protege.commitnavigator.model.RepositoryCoordinate;
+import edu.stanford.protege.commitnavigator.model.RepositoryCoordinates;
 import edu.stanford.protege.commitnavigator.utils.CommitNavigator;
 import edu.stanford.protege.commitnavigator.model.CommitMetadata;
 
 // Create repository coordinate from URL
-var coordinate = RepositoryCoordinate.createFromUrl("https://github.com/example/repo.git");
+var coordinate = RepositoryCoordinates.createFromUrl("https://github.com/example/repo.git");
 
 // Create repository using factory pattern
 var repository = GitHubRepositoryBuilderFactory.create(coordinate)
@@ -68,7 +68,7 @@ repository.close();
 
 ```java
 // Create repository coordinate for the repository and branch
-var coordinate = RepositoryCoordinate.createFromUrl("https://github.com/example/repo.git", "develop");
+var coordinate = RepositoryCoordinates.createFromUrl("https://github.com/example/repo.git", "develop");
 
 // Configure repository with advanced options
 var repository = GitHubRepositoryBuilderFactory.create(coordinate)
@@ -93,7 +93,7 @@ For public repositories, authentication is optional:
 
 ```java
 // Create coordinate for public repository
-var coordinate = RepositoryCoordinate.createFromUrl("https://github.com/public/repo.git");
+var coordinate = RepositoryCoordinates.createFromUrl("https://github.com/public/repo.git");
 
 // Create repository without authentication
 var repository = GitHubRepositoryBuilderFactory.create(coordinate)
