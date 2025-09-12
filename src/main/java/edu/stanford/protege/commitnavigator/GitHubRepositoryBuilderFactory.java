@@ -4,7 +4,6 @@ import edu.stanford.protege.commitnavigator.model.RepositoryCoordinates;
 import edu.stanford.protege.commitnavigator.utils.AuthenticationManager;
 import edu.stanford.protege.commitnavigator.utils.FileChangeDetector;
 import edu.stanford.protege.commitnavigator.utils.impl.AuthenticationManagerImpl;
-import edu.stanford.protege.commitnavigator.utils.impl.FileChangeDetectorImpl;
 import java.util.Objects;
 
 /**

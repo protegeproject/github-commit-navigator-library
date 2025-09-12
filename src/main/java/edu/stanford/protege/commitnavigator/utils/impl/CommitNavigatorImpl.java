@@ -1,6 +1,6 @@
 package edu.stanford.protege.commitnavigator.utils.impl;
 
-import edu.stanford.protege.commitnavigator.config.RepositoryConfig;
+import edu.stanford.protege.commitnavigator.config.CommitNavigatorConfig;
 import edu.stanford.protege.commitnavigator.exceptions.RepositoryException;
 import edu.stanford.protege.commitnavigator.model.CommitMetadata;
 import edu.stanford.protege.commitnavigator.utils.CommitNavigator;
@@ -47,8 +47,7 @@ public class CommitNavigatorImpl implements CommitNavigator {
   private static final Logger logger = LoggerFactory.getLogger(CommitNavigatorImpl.class);
 
   private final Repository repository;
-  private final Git git;
-  private final RepositoryConfig config;
+  private final CommitNavigatorConfig navigatorConfig;
   private final FileChangeDetector fileChangeDetector;
 
   private List<RevCommit> filteredCommits;
@@ -62,20 +61,18 @@ public class CommitNavigatorImpl implements CommitNavigator {
    * actual commit list is built lazily on first access to improve performance.
    *
    * @param repository the Git repository to navigate
-   * @param git the JGit Git instance for repository operations
-   * @param config the navigation configuration containing file filters and other settings
+   * @param navigatorConfig the navigation configuration containing file filters and starting commit
    * @param fileChangeDetector the service for detecting file changes in commits
    * @throws NullPointerException if any parameter is null
    */
   @Inject
   public CommitNavigatorImpl(
       Repository repository,
-      Git git,
-      RepositoryConfig config,
+      CommitNavigatorConfig navigatorConfig,
       FileChangeDetector fileChangeDetector) {
     this.repository = Objects.requireNonNull(repository, "Repository cannot be null");
-    this.git = Objects.requireNonNull(git, "Git cannot be null");
-    this.config = Objects.requireNonNull(config, "NavigatorConfig cannot be null");
+    this.navigatorConfig =
+        Objects.requireNonNull(navigatorConfig, "NavigatorConfig cannot be null");
     this.fileChangeDetector =
         Objects.requireNonNull(fileChangeDetector, "FileChangeDetector cannot be null");
     this.currentIndex = -1;
@@ -263,11 +260,15 @@ public class CommitNavigatorImpl implements CommitNavigator {
     try {
       filteredCommits = buildFilteredCommitList();
 
-      if (config.getStartingCommit().isPresent()) {
-        var startingCommit = config.getStartingCommit().get();
+      if (navigatorConfig.getStartingCommit().isPresent()) {
+        var startingCommit = navigatorConfig.getStartingCommit().get();
         currentIndex = findCommitIndex(startingCommit);
         if (currentIndex == -1) {
-          throw new RepositoryException("Starting commit not found: " + startingCommit);
+          logger.warn(
+              "No commit found for starting commit {} that includes the file in the filter",
+              startingCommit);
+          logger.warn("Starting at the latest commit instead.");
+          currentIndex = filteredCommits.size() - 1;
         }
       } else {
         currentIndex = filteredCommits.size() - 1;
@@ -308,13 +309,13 @@ public class CommitNavigatorImpl implements CommitNavigator {
   }
 
   private boolean shouldIncludeCommit(RevCommit commit) throws RepositoryException {
-    var fileFilters = config.getFileFilters();
+    var fileFilters = navigatorConfig.getFileFilters();
 
-    if (fileFilters == null || fileFilters.isEmpty()) {
+    if (fileFilters.isEmpty()) {
       return true;
     }
 
-    return fileChangeDetector.hasFileChanges(repository, commit, fileFilters);
+    return fileChangeDetector.hasFileChanges(repository, commit, fileFilters.get());
   }
 
   private int findCommitIndex(String commitHash) {
@@ -330,6 +331,7 @@ public class CommitNavigatorImpl implements CommitNavigator {
     logger.debug("Checking out commit: {}", commitHash);
 
     try {
+      var git = new Git(repository);
       var checkout = git.checkout();
       checkout.setName(commitHash);
       checkout.call();

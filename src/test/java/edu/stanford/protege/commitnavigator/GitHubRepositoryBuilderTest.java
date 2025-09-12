@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import edu.stanford.protege.commitnavigator.config.AuthenticationConfig;
 import edu.stanford.protege.commitnavigator.model.RepositoryCoordinates;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 
 class GitHubRepositoryBuilderTest {
@@ -72,15 +71,12 @@ class GitHubRepositoryBuilderTest {
     var token = "test-token";
     var localPath = "/tmp/test-repo";
     var branch = "develop";
-    var startingCommit = "abc123";
     var coordinate = RepositoryCoordinates.create("example", "repo", branch);
 
     var navigator =
         GitHubRepositoryBuilderFactory.create(coordinate)
             .withPersonalAccessToken(token)
             .localCloneDirectory(localPath)
-            .fileFilters("*.java", "*.md")
-            .startingCommit(startingCommit)
             .shallowClone(true)
             .build();
 
@@ -88,10 +84,7 @@ class GitHubRepositoryBuilderTest {
     var config = navigator.getConfig();
     assertEquals("https://github.com/example/repo.git", config.getRepositoryUrl());
     assertEquals(Paths.get(localPath), config.getLocalCloneDirectory());
-    assertEquals(Arrays.asList("*.java", "*.md"), config.getFileFilters());
     assertEquals(branch, config.getBranch());
-    assertTrue(config.getStartingCommit().isPresent());
-    assertEquals(startingCommit, config.getStartingCommit().get());
     assertTrue(config.isShallowClone());
   }
 

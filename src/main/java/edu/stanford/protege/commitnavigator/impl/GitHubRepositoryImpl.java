@@ -1,21 +1,19 @@
 package edu.stanford.protege.commitnavigator.impl;
 
 import edu.stanford.protege.commitnavigator.GitHubRepository;
+import edu.stanford.protege.commitnavigator.config.CommitNavigatorConfig;
 import edu.stanford.protege.commitnavigator.config.RepositoryConfig;
 import edu.stanford.protege.commitnavigator.exceptions.AuthenticationException;
 import edu.stanford.protege.commitnavigator.exceptions.GitHubNavigatorException;
-import edu.stanford.protege.commitnavigator.exceptions.RepositoryException;
 import edu.stanford.protege.commitnavigator.utils.AuthenticationManager;
 import edu.stanford.protege.commitnavigator.utils.CommitNavigator;
-import edu.stanford.protege.commitnavigator.utils.FileChangeDetector;
 import edu.stanford.protege.commitnavigator.utils.impl.CommitNavigatorImpl;
+import edu.stanford.protege.commitnavigator.utils.impl.FileChangeDetectorImpl;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 import javax.inject.Inject;
-
-import edu.stanford.protege.commitnavigator.utils.impl.FileChangeDetectorImpl;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;
@@ -73,7 +71,6 @@ public class GitHubRepositoryImpl implements GitHubRepository {
 
   private Repository repository;
   private Git git;
-  private CommitNavigator commitNavigator;
   private boolean initialized = false;
 
   /**
@@ -88,9 +85,7 @@ public class GitHubRepositoryImpl implements GitHubRepository {
    * @throws NullPointerException if any parameter is null
    */
   @Inject
-  public GitHubRepositoryImpl(
-      RepositoryConfig config,
-      AuthenticationManager authManager) {
+  public GitHubRepositoryImpl(RepositoryConfig config, AuthenticationManager authManager) {
     this.config = Objects.requireNonNull(config, "Repository config cannot be null");
     this.authManager = Objects.requireNonNull(authManager, "Authentication manager cannot be null");
   }
@@ -131,14 +126,34 @@ public class GitHubRepositoryImpl implements GitHubRepository {
   /**
    * Retrieves the commit navigator for traversing repository commits.
    *
+   * <p>The commit navigator provides methods to move through commits sequentially.
+   *
    * @return a {@link CommitNavigator} instance for commit traversal
+   * @throws GitHubNavigatorException if the repository is not initialized or if there are issues
+   *     accessing commit history
    */
   @Override
   public CommitNavigator getCommitNavigator() throws GitHubNavigatorException {
     ensureInitialized();
-    logger.debug("Creating commit navigator");
+    logger.debug("Creating commit navigator with default configuration");
+    var defaultConfig = CommitNavigatorConfig.getDefault();
+    return getCommitNavigator(defaultConfig);
+  }
+
+  /**
+   * Retrieves the commit navigator for traversing repository commits with custom configuration.
+   *
+   * @param navigatorConfig the configuration for commit navigation including file filters and
+   *     starting commit position
+   * @return a {@link CommitNavigator} instance for commit traversal
+   */
+  @Override
+  public CommitNavigator getCommitNavigator(CommitNavigatorConfig navigatorConfig)
+      throws GitHubNavigatorException {
+    ensureInitialized();
+    logger.debug("Creating commit navigator with custom configuration: {}", navigatorConfig);
     var fileChangeDetector = new FileChangeDetectorImpl();
-    return new CommitNavigatorImpl(repository, git, config, fileChangeDetector);
+    return new CommitNavigatorImpl(repository, navigatorConfig, fileChangeDetector);
   }
 
   /**
@@ -165,14 +180,10 @@ public class GitHubRepositoryImpl implements GitHubRepository {
       }
       fetchCommand.call();
 
-      commitNavigator.reset();
-
       logger.debug("Successfully fetched latest changes");
 
     } catch (GitAPIException | AuthenticationException e) {
       throw new GitHubNavigatorException("Failed to fetch latest changes", e);
-    } catch (RepositoryException e) {
-      throw new GitHubNavigatorException("Failed to reset navigator after fetch", e);
     }
   }
 

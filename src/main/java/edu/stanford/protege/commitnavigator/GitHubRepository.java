@@ -1,5 +1,6 @@
 package edu.stanford.protege.commitnavigator;
 
+import edu.stanford.protege.commitnavigator.config.CommitNavigatorConfig;
 import edu.stanford.protege.commitnavigator.config.RepositoryConfig;
 import edu.stanford.protege.commitnavigator.exceptions.GitHubNavigatorException;
 import edu.stanford.protege.commitnavigator.utils.CommitNavigator;
@@ -27,14 +28,27 @@ public interface GitHubRepository {
   /**
    * Retrieves the commit navigator for traversing repository commits.
    *
-   * <p>The commit navigator provides methods to move through commits sequentially, with optional
-   * file filtering applied based on the configuration.
+   * <p>The commit navigator provides methods to move through commits sequentially.
    *
    * @return a {@link CommitNavigator} instance for commit traversal
    * @throws GitHubNavigatorException if the repository is not initialized or if there are issues
    *     accessing commit history
    */
   CommitNavigator getCommitNavigator() throws GitHubNavigatorException;
+
+  /**
+   * Retrieves the commit navigator for traversing repository commits with custom configuration.
+   *
+   * <p>The commit navigator provides methods to move through commits sequentially, with optional
+   * file filtering and starting commit position based on the provided configuration.
+   *
+   * @param navigatorConfig the configuration to customize the commit navigation
+   * @return a {@link CommitNavigator} instance for commit traversal
+   * @throws GitHubNavigatorException if the repository is not initialized or if there are issues
+   *     accessing commit history
+   */
+  CommitNavigator getCommitNavigator(CommitNavigatorConfig navigatorConfig)
+      throws GitHubNavigatorException;
 
   /**
    * Fetches the latest changes from the remote repository.
@@ -66,7 +80,7 @@ public interface GitHubRepository {
    * Retrieves the configuration used to create this navigator.
    *
    * @return the {@link RepositoryConfig} instance containing repository URL, authentication
-   *     settings, file filters, and other configuration options
+   *     settings, and other repository-level configuration options
    */
   RepositoryConfig getConfig();
 }

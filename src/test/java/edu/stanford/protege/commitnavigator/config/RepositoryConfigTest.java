@@ -4,30 +4,23 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import edu.stanford.protege.commitnavigator.model.RepositoryCoordinates;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 
 class RepositoryConfigTest {
 
   @Test
   void testBuilderPattern() {
-    var startingCommit = "abc123";
     var coordinate = RepositoryCoordinates.create("example", "repo", "develop");
 
     var config =
         RepositoryConfig.builder(coordinate)
             .localCloneDirectory(Paths.get("/tmp/test"))
-            .fileFilters(Arrays.asList("*.java", "*.md"))
-            .startingCommit(startingCommit)
             .shallowClone(true)
             .build();
 
     assertEquals("https://github.com/example/repo.git", config.getRepositoryUrl());
     assertEquals(Paths.get("/tmp/test"), config.getLocalCloneDirectory());
-    assertEquals(Arrays.asList("*.java", "*.md"), config.getFileFilters());
     assertEquals("develop", config.getBranch());
-    assertTrue(config.getStartingCommit().isPresent());
-    assertEquals(startingCommit, config.getStartingCommit().get());
     assertTrue(config.isShallowClone());
   }
 
@@ -39,9 +32,7 @@ class RepositoryConfigTest {
 
     assertEquals("https://github.com/example/repo.git", config.getRepositoryUrl());
     assertNotNull(config.getLocalCloneDirectory()); // Default directory is set
-    assertNull(config.getFileFilters());
     assertEquals("main", config.getBranch());
-    assertFalse(config.getStartingCommit().isPresent());
     assertFalse(config.isShallowClone());
     assertFalse(config.getAuthConfig().isPresent());
   }

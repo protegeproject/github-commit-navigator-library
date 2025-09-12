@@ -1,26 +1,25 @@
 package edu.stanford.protege.commitnavigator.config;
 
-import com.google.common.collect.ImmutableList;
 import edu.stanford.protege.commitnavigator.model.RepositoryCoordinates;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 /**
  * Configuration class for GitHub repository navigation parameters.
  *
- * <p>This class encapsulates all configuration options for repository navigation, including
- * repository details, file filters, authentication settings, and clone behavior. The configuration
- * is immutable and uses the builder pattern for construction.
+ * <p>This class encapsulates repository-level configuration options including repository details,
+ * authentication settings, and clone behavior. The configuration is immutable and uses the builder
+ * pattern for construction.
+ *
+ * <p>Navigation-specific options such as file filters and starting commit are now configured
+ * separately using {@link CommitNavigatorConfig}.
  *
  * <p>Usage example:
  *
  * <pre>{@code
- * var config = NavigatorConfig.builder("https://github.com/user/repo.git")
+ * var config = RepositoryConfig.builder(repositoryCoordinates)
  *     .localCloneDirectory(Paths.get("/tmp/repo"))
- *     .fileFilters(List.of("*.java", "*.md"))
- *     .branch("develop")
  *     .shallowClone(true)
  *     .authConfig(authConfig)
  *     .build();
@@ -32,9 +31,7 @@ public class RepositoryConfig {
   private final String repoUrl;
   private final String repoName;
   private final Path localCloneDirectory;
-  private final List<String> fileFilters;
   private final String branch;
-  private final String startingCommit;
   private final boolean shallowClone;
   private final AuthenticationConfig authConfig;
 
@@ -43,8 +40,6 @@ public class RepositoryConfig {
     this.repoName = Objects.requireNonNull(builder.repoName, "Repository name cannot be null");
     this.branch = Objects.requireNonNull(builder.branch, "Branch cannot be null");
     this.localCloneDirectory = builder.localCloneDirectory;
-    this.fileFilters = builder.fileFilters;
-    this.startingCommit = builder.startingCommit;
     this.shallowClone = builder.shallowClone;
     this.authConfig = builder.authConfig;
   }
@@ -77,30 +72,12 @@ public class RepositoryConfig {
   }
 
   /**
-   * Returns the file filter patterns for limiting commit navigation.
-   *
-   * @return the list of file filter patterns, or null if no filters are specified
-   */
-  public List<String> getFileFilters() {
-    return fileFilters != null ? ImmutableList.copyOf(fileFilters) : null;
-  }
-
-  /**
    * Returns the branch name to navigate through.
    *
    * @return the branch name (defaults to "main")
    */
   public String getBranch() {
     return branch;
-  }
-
-  /**
-   * Returns the starting commit hash for navigation.
-   *
-   * @return an {@link Optional} containing the starting commit hash, or empty if not specified
-   */
-  public Optional<String> getStartingCommit() {
-    return Optional.ofNullable(startingCommit);
   }
 
   /**
@@ -146,8 +123,6 @@ public class RepositoryConfig {
     private final String branch;
 
     private Path localCloneDirectory;
-    private List<String> fileFilters;
-    private String startingCommit;
     private boolean shallowClone = DEFAULT_SHALLOW_CLONE;
     private AuthenticationConfig authConfig;
 
@@ -167,28 +142,6 @@ public class RepositoryConfig {
      */
     public Builder localCloneDirectory(Path localCloneDirectory) {
       this.localCloneDirectory = localCloneDirectory;
-      return this;
-    }
-
-    /**
-     * Sets the file filters for limiting commit navigation.
-     *
-     * @param fileFilters the list of file filter patterns
-     * @return this builder instance for method chaining
-     */
-    public Builder fileFilters(List<String> fileFilters) {
-      this.fileFilters = fileFilters != null ? ImmutableList.copyOf(fileFilters) : null;
-      return this;
-    }
-
-    /**
-     * Sets the starting commit hash for navigation.
-     *
-     * @param startingCommit the commit hash to start navigation from
-     * @return this builder instance for method chaining
-     */
-    public Builder startingCommit(String startingCommit) {
-      this.startingCommit = startingCommit;
       return this;
     }
 

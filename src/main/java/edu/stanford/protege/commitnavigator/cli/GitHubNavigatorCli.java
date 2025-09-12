@@ -1,6 +1,7 @@
 package edu.stanford.protege.commitnavigator.cli;
 
 import edu.stanford.protege.commitnavigator.GitHubRepositoryBuilderFactory;
+import edu.stanford.protege.commitnavigator.config.CommitNavigatorConfig;
 import edu.stanford.protege.commitnavigator.model.RepositoryCoordinates;
 import java.util.concurrent.Callable;
 import org.slf4j.Logger;
@@ -99,20 +100,22 @@ public class GitHubNavigatorCli implements Callable<Integer> {
         repositoryBuilder.localCloneDirectory(cloneDirectory);
       }
 
-      // Add file filters if provided, otherwise use default filters
+      var repository = repositoryBuilder.build();
+
+      repository.initialize();
+
+      // Create navigator configuration with file filters if provided
+      var navigatorConfigBuilder = CommitNavigatorConfig.builder();
       if (fileFilter != null && !fileFilter.trim().isEmpty()) {
         var filters = fileFilter.split(",");
         for (int i = 0; i < filters.length; i++) {
           filters[i] = filters[i].trim();
         }
-        repositoryBuilder.fileFilters(filters);
+        navigatorConfigBuilder.fileFilters(filters); // Using varargs method
       }
+      var navigatorConfig = navigatorConfigBuilder.build();
 
-      var repository = repositoryBuilder.build();
-
-      repository.initialize();
-
-      var commitNavigator = repository.getCommitNavigator();
+      var commitNavigator = repository.getCommitNavigator(navigatorConfig);
 
       while (commitNavigator.hasPrevious()) {
         var commit = commitNavigator.previous();

@@ -45,8 +45,8 @@ repository.initialize();
 var commitNavigator = repository.getCommitNavigator();
 
 // Navigate through commits
-while (commitNavigator.hasNext()) {
-    var commit = commitNavigator.next();
+while (commitNavigator.hasPrevious()) {
+    var commit = commitNavigator.previous();
     System.out.println("Commit: " + commit.getCommitHash());
     System.out.println("Author: " + commit.getCommitterUsername());
     System.out.println("Date: " + commit.getCommitDate());
@@ -74,10 +74,17 @@ var coordinate = RepositoryCoordinates.createFromUrl("https://github.com/example
 var repository = GitHubRepositoryBuilderFactory.create(coordinate)
     .withPersonalAccessToken("your-token-here")
     .localCloneDirectory("/path/to/local/repo")
-    .fileFilters("*.java", "*.md", "pom.xml")
-    .startingCommit("abc123def")
     .shallowClone(true)
     .build();
+
+// Configure navigator with file filtering and starting position
+var navigatorConfig = CommitNavigatorConfig.builder()
+    .fileFilters("*.java", "*.md", "pom.xml") // Using convenient varargs syntax
+    .startingCommit("abc123def")
+    .build();
+
+// Get navigator with configuration
+var commitNavigator = repository.getCommitNavigator(navigatorConfig);
 ```
 
 ### Authentication
@@ -93,20 +100,36 @@ For public repositories, authentication is optional:
 
 ```java
 // Create coordinate for public repository
-var coordinate = RepositoryCoordinates.createFromUrl("https://github.com/public/repo.git");
+var coordinates = RepositoryCoordinates.createFromUrl("https://github.com/public/repo.git");
 
 // Create repository without authentication
-var repository = GitHubRepositoryBuilderFactory.create(coordinate)
+var repository = GitHubRepositoryBuilderFactory.create(coordinates)
     .build(); // No authentication needed
 ```
 
 ### File Filtering
 
-Filter commits to only include those that modified specific files:
+Filter commits to only include those that modified specific files using CommitNavigatorConfig:
 
-- `fileFilters("src/main/java/Main.java", "README.md")` - Exact file paths
-- `fileFilters("*.java", "**/*.md", "src/**/*.xml")` - Glob patterns
-- `fileFilters("pom.xml", "*.java", "docs/**/*.md")` - Mixed patterns
+```java
+// Configure file filters when creating navigator config using List
+var navigatorConfig = CommitNavigatorConfig.builder()
+    .fileFilters(List.of("src/main/java/Main.java", "README.md")) // Exact file paths
+    .build();
+
+// Or using convenient varargs syntax
+var navigatorConfig = CommitNavigatorConfig.builder()
+    .fileFilters("*.java", "**/*.md", "src/**/*.xml") // Glob patterns
+    .build();
+
+// Or mixed patterns with varargs
+var navigatorConfig = CommitNavigatorConfig.builder()
+    .fileFilters("pom.xml", "*.java", "docs/**/*.md") // Mixed patterns
+    .build();
+
+// Then pass to getCommitNavigator
+var commitNavigator = repository.getCommitNavigator(navigatorConfig);
+```
 
 
 ## Navigation Methods

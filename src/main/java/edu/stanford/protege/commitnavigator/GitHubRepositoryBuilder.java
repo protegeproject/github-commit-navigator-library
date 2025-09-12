@@ -7,17 +7,15 @@ import edu.stanford.protege.commitnavigator.model.RepositoryCoordinates;
 import edu.stanford.protege.commitnavigator.utils.AuthenticationManager;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 
 /**
  * Builder class for creating {@link GitHubRepository} instances with flexible configuration
  * options.
  *
- * <p>This builder provides a fluent API for configuring repository navigation parameters including
- * authentication methods, file filters, branch selection, and clone behavior. The builder supports
- * multiple authentication mechanisms and allows for fine-grained control over commit filtering.
+ * <p>This builder provides a fluent API for configuring repository parameters including
+ * authentication methods, branch selection, and clone behavior. The builder supports multiple
+ * authentication mechanisms.
  *
  * <p>Usage example:
  *
@@ -39,8 +37,7 @@ public class GitHubRepositoryBuilder {
   private final AuthenticationManager authManager;
 
   public GitHubRepositoryBuilder(
-      RepositoryCoordinates repositoryCoordinates,
-      AuthenticationManager authManager) {
+      RepositoryCoordinates repositoryCoordinates, AuthenticationManager authManager) {
     this.configBuilder = RepositoryConfig.builder(repositoryCoordinates);
     this.authManager = Objects.requireNonNull(authManager, "Authentication manager cannot be null");
   }
@@ -109,45 +106,6 @@ public class GitHubRepositoryBuilder {
    */
   public GitHubRepositoryBuilder localCloneDirectory(Path path) {
     configBuilder.localCloneDirectory(path);
-    return this;
-  }
-
-  /**
-   * Configures file filters to limit commits based on file changes.
-   *
-   * <p>Only commits that modify files matching these filters will be included in the navigation.
-   * Supports glob patterns like "*.java" and "**\/*.md".
-   *
-   * @param filters variable number of file filter patterns
-   * @return this builder instance for method chaining
-   */
-  public GitHubRepositoryBuilder fileFilters(String... filters) {
-    configBuilder.fileFilters(Arrays.asList(filters));
-    return this;
-  }
-
-  /**
-   * Configures file filters to limit commits based on file changes.
-   *
-   * <p>Only commits that modify files matching these filters will be included in the navigation.
-   * Supports glob patterns like "*.java" and "**\/*.md".
-   *
-   * @param filters list of file filter patterns
-   * @return this builder instance for method chaining
-   */
-  public GitHubRepositoryBuilder fileFilters(List<String> filters) {
-    configBuilder.fileFilters(filters);
-    return this;
-  }
-
-  /**
-   * Specifies the commit hash to start navigation from.
-   *
-   * @param commitHash the full or abbreviated commit hash
-   * @return this builder instance for method chaining
-   */
-  public GitHubRepositoryBuilder startingCommit(String commitHash) {
-    configBuilder.startingCommit(commitHash);
     return this;
   }
 
