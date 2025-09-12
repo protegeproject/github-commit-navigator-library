@@ -19,7 +19,7 @@ import java.util.Objects;
  *
  * <pre>{@code
  * // Public repository
- * var coordinate = RepositoryCoordinate.create("owner", "repo");
+ * var coordinate = RepositoryCoordinates.create("owner", "repo");
  * var repository = GitHubRepositoryBuilderFactory.create(coordinate)
  *     .localCloneDirectory("/tmp/repo")
  *     .build();
@@ -38,14 +38,13 @@ public class GitHubRepositoryBuilderFactory {
    *
    * @param repositoryCoordinates the repository coordinate containing owner, repo, and branch
    * @return a pre-configured {@link GitHubRepositoryBuilder} for public repository access
-   * @throws NullPointerException if repositoryCoordinate is null
+   * @throws NullPointerException if repositoryCoordinates is null
    */
   public static GitHubRepositoryBuilder create(RepositoryCoordinates repositoryCoordinates) {
     Objects.requireNonNull(repositoryCoordinates, "Repository coordinate cannot be null");
 
     var authManager = new AuthenticationManagerImpl();
-    var fileChangeDetector = new FileChangeDetectorImpl();
 
-    return new GitHubRepositoryBuilder(repositoryCoordinates, authManager, fileChangeDetector);
+    return new GitHubRepositoryBuilder(repositoryCoordinates, authManager);
   }
 }

@@ -14,6 +14,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 import javax.inject.Inject;
+
+import edu.stanford.protege.commitnavigator.utils.impl.FileChangeDetectorImpl;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;
@@ -42,10 +44,9 @@ import org.slf4j.LoggerFactory;
  * <p>Usage example:
  *
  * <pre>{@code
- * var coordinate = RepositoryCoordinate.create(repoName, repoName);
+ * var coordinate = RepositoryCoordinates.create(repoName, repoName);
  * var repository = GitHubRepositoryBuilderFactory.create(coordinate)
  *     .withPersonalAccessToken("token")
- *     .fileFilters("*.java")
  *     .build();
  *
  * repository.initialize();
@@ -69,7 +70,6 @@ public class GitHubRepositoryImpl implements GitHubRepository {
 
   private final RepositoryConfig config;
   private final AuthenticationManager authManager;
-  private final FileChangeDetector fileChangeDetector;
 
   private Repository repository;
   private Git git;
@@ -85,18 +85,14 @@ public class GitHubRepositoryImpl implements GitHubRepository {
    * @param config the repository configuration containing repository URL, authentication, and other
    *     parameters
    * @param authManager the service for handling GitHub authentication
-   * @param fileChangeDetector the service for detecting file changes in commits
    * @throws NullPointerException if any parameter is null
    */
   @Inject
   public GitHubRepositoryImpl(
       RepositoryConfig config,
-      AuthenticationManager authManager,
-      FileChangeDetector fileChangeDetector) {
+      AuthenticationManager authManager) {
     this.config = Objects.requireNonNull(config, "Repository config cannot be null");
     this.authManager = Objects.requireNonNull(authManager, "Authentication manager cannot be null");
-    this.fileChangeDetector =
-        Objects.requireNonNull(fileChangeDetector, "File change detector cannot be null");
   }
 
   /**
@@ -122,7 +118,6 @@ public class GitHubRepositoryImpl implements GitHubRepository {
     try {
       authenticateWithGitHub();
       setupRepository();
-      createCommitNavigator();
 
       initialized = true;
       logger.info("Successfully initialized GitHub repository navigator");
@@ -141,7 +136,9 @@ public class GitHubRepositoryImpl implements GitHubRepository {
   @Override
   public CommitNavigator getCommitNavigator() throws GitHubNavigatorException {
     ensureInitialized();
-    return commitNavigator;
+    logger.debug("Creating commit navigator");
+    var fileChangeDetector = new FileChangeDetectorImpl();
+    return new CommitNavigatorImpl(repository, git, config, fileChangeDetector);
   }
 
   /**
@@ -252,12 +249,6 @@ public class GitHubRepositoryImpl implements GitHubRepository {
     } catch (AuthenticationException e) {
       throw new GitHubNavigatorException("Authentication failed during repository setup", e);
     }
-  }
-
-  /** Creates a commit navigator instance for traversing repository commits. */
-  private void createCommitNavigator() {
-    logger.debug("Creating commit navigator");
-    commitNavigator = new CommitNavigatorImpl(repository, git, config, fileChangeDetector);
   }
 
   /**

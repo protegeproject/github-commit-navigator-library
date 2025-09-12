@@ -5,7 +5,6 @@ import edu.stanford.protege.commitnavigator.config.RepositoryConfig;
 import edu.stanford.protege.commitnavigator.impl.GitHubRepositoryImpl;
 import edu.stanford.protege.commitnavigator.model.RepositoryCoordinates;
 import edu.stanford.protege.commitnavigator.utils.AuthenticationManager;
-import edu.stanford.protege.commitnavigator.utils.FileChangeDetector;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -27,7 +26,6 @@ import java.util.Objects;
  *     .forRepository("https://github.com/user/repo.git")
  *     .withPersonalAccessToken("ghp_xxxxxxxxxxxx")
  *     .localCloneDirectory("/tmp/repo")
- *     .fileFilters("*.java", "*.md")
  *     .branch("develop")
  *     .shallowClone(true)
  *     .build();
@@ -39,16 +37,12 @@ public class GitHubRepositoryBuilder {
   private final RepositoryConfig.Builder configBuilder;
 
   private final AuthenticationManager authManager;
-  private final FileChangeDetector fileChangeDetector;
 
   public GitHubRepositoryBuilder(
       RepositoryCoordinates repositoryCoordinates,
-      AuthenticationManager authManager,
-      FileChangeDetector fileChangeDetector) {
+      AuthenticationManager authManager) {
     this.configBuilder = RepositoryConfig.builder(repositoryCoordinates);
     this.authManager = Objects.requireNonNull(authManager, "Authentication manager cannot be null");
-    this.fileChangeDetector =
-        Objects.requireNonNull(fileChangeDetector, "File change detector cannot be null");
   }
 
   /**
@@ -182,6 +176,6 @@ public class GitHubRepositoryBuilder {
    */
   public GitHubRepository build() {
     var config = configBuilder.build();
-    return new GitHubRepositoryImpl(config, authManager, fileChangeDetector);
+    return new GitHubRepositoryImpl(config, authManager);
   }
 }
