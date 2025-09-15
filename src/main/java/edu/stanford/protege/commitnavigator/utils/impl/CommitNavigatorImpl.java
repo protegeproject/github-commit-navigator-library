@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
  * <ul>
  *   <li>Lazy initialization of commit list on first access
  *   <li>File-based filtering of commits using glob patterns
- *   <li>Bidirectional navigation (next/previous)
+ *   <li>Bidirectional navigation (child/parent)
  *   <li>Optional checkout operations during navigation
  *   <li>Configurable starting commit position
  * </ul>
@@ -79,65 +79,65 @@ public class CommitNavigatorImpl implements CommitNavigator {
   }
 
   /**
-   * Moves to the next commit in the filtered commit history.
+   * Moves to the child commit in the filtered commit history.
    *
-   * <p>This method advances the internal index and returns the metadata of the next commit. If no
-   * next commit is available, returns null.
+   * <p>This method advances the internal index and returns the metadata of the child commit. If no
+   * child commit is available, returns null.
    *
-   * @return the {@link CommitMetadata} of the next commit, or null if no next commit exists
+   * @return the {@link CommitMetadata} of the child commit, or null if no child commit exists
    * @throws RepositoryException if an error occurs during navigation or repository access
    */
   @Override
-  public CommitMetadata next() throws RepositoryException {
+  public CommitMetadata fetchChild() throws RepositoryException {
     ensureInitialized();
 
-    if (!hasNext()) {
+    if (!hasChild()) {
       return null;
     }
 
     currentIndex++;
     var commit = filteredCommits.get(currentIndex);
-    logger.debug("Navigated to next commit: {}", commit.getName());
+    logger.debug("Navigated to child commit: {}", commit.getName());
     return createCommitMetadata(commit);
   }
 
   /**
-   * Moves to the previous commit in the filtered commit history.
+   * Moves to the parent commit in the filtered commit history.
    *
-   * <p>This method decrements the internal index and returns the metadata of the previous commit.
-   * If no previous commit is available, returns null.
+   * <p>This method decrements the internal index and returns the metadata of the parent commit. If
+   * no parent commit is available, returns null.
    *
-   * @return the {@link CommitMetadata} of the previous commit, or null if no previous commit exists
+   * @return the {@link CommitMetadata} of the parent commit, or null if no parent commit exists
    * @throws RepositoryException if an error occurs during navigation or repository access
    */
   @Override
-  public CommitMetadata previous() throws RepositoryException {
+  public CommitMetadata fetchParent() throws RepositoryException {
     ensureInitialized();
 
-    if (!hasPrevious()) {
+    if (!hasParent()) {
       return null;
     }
 
     currentIndex--;
     var commit = filteredCommits.get(currentIndex);
-    logger.debug("Navigated to previous commit: {}", commit.getName());
+    logger.debug("Navigated to parent commit: {}", commit.getName());
     return createCommitMetadata(commit);
   }
 
   /**
-   * Moves to the next commit and checks out the working directory to that commit.
+   * Moves to the child commit and checks out the working directory to that commit.
    *
-   * <p>This method combines navigation and checkout operations. It first moves to the next commit,
-   * then checks out the working directory to match that commit's state. If no next commit is
+   * <p>This method combines navigation and checkout operations. It first moves to the child commit,
+   * then checks out the working directory to match that commit's state. If no child commit is
    * available, no checkout is performed.
    *
-   * @return the {@link CommitMetadata} of the next commit, or null if no next commit exists
+   * @return the {@link CommitMetadata} of the child commit, or null if no child commit exists
    * @throws RepositoryException if an error occurs during navigation, checkout, or repository
    *     access
    */
   @Override
-  public CommitMetadata nextAndCheckout() throws RepositoryException {
-    var commitMetadata = next();
+  public CommitMetadata pullChild() throws RepositoryException {
+    var commitMetadata = fetchChild();
     if (commitMetadata != null) {
       checkout(commitMetadata.getCommitHash());
     }
@@ -145,19 +145,19 @@ public class CommitNavigatorImpl implements CommitNavigator {
   }
 
   /**
-   * Moves to the previous commit and checks out the working directory to that commit.
+   * Moves to the parent commit and checks out the working directory to that commit.
    *
-   * <p>This method combines navigation and checkout operations. It first moves to the previous
-   * commit, then checks out the working directory to match that commit's state. If no previous
-   * commit is available, no checkout is performed.
+   * <p>This method combines navigation and checkout operations. It first moves to the parent
+   * commit, then checks out the working directory to match that commit's state. If no parent commit
+   * is available, no checkout is performed.
    *
-   * @return the {@link CommitMetadata} of the previous commit, or null if no previous commit exists
+   * @return the {@link CommitMetadata} of the parent commit, or null if no parent commit exists
    * @throws RepositoryException if an error occurs during navigation, checkout, or repository
    *     access
    */
   @Override
-  public CommitMetadata previousAndCheckout() throws RepositoryException {
-    var commitMetadata = previous();
+  public CommitMetadata pullParent() throws RepositoryException {
+    var commitMetadata = fetchParent();
     if (commitMetadata != null) {
       checkout(commitMetadata.getCommitHash());
     }
@@ -165,31 +165,31 @@ public class CommitNavigatorImpl implements CommitNavigator {
   }
 
   /**
-   * Checks if there is a next commit available for navigation.
+   * Checks if there is a child commit available for navigation.
    *
    * <p>This method determines if the current index position allows for forward navigation in the
    * filtered commit list.
    *
-   * @return true if there is a next commit available, false otherwise
+   * @return true if there is a child commit available, false otherwise
    * @throws RepositoryException if an error occurs during repository access or initialization
    */
   @Override
-  public boolean hasNext() throws RepositoryException {
+  public boolean hasChild() throws RepositoryException {
     ensureInitialized();
     return currentIndex < filteredCommits.size() - 1;
   }
 
   /**
-   * Checks if there is a previous commit available for navigation.
+   * Checks if there is a parent commit available for navigation.
    *
    * <p>This method determines if the current index position allows for backward navigation in the
    * filtered commit list.
    *
-   * @return true if there is a previous commit available, false otherwise
+   * @return true if there is a parent commit available, false otherwise
    * @throws RepositoryException if an error occurs during repository access or initialization
    */
   @Override
-  public boolean hasPrevious() throws RepositoryException {
+  public boolean hasParent() throws RepositoryException {
     ensureInitialized();
     return currentIndex > 0;
   }

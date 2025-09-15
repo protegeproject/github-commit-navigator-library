@@ -16,16 +16,16 @@ import java.nio.file.Path;
  * <pre>{@code
  * var navigator = commitNavigator;
  *
- * // Navigate forward through commits
- * while (navigator.hasNext()) {
- *     var commit = navigator.next();
+ * // Navigate to child commits (newer)
+ * while (navigator.hasChild()) {
+ *     var commit = navigator.fetchChild();
  *     System.out.println("Processing commit: " + commit.getCommitHash());
  * }
  *
- * // Navigate backward with checkout
+ * // Navigate to parent commits (older) with checkout
  * navigator.reset();
- * while (navigator.hasPrevious()) {
- *     var commit = navigator.previousAndCheckout();
+ * while (navigator.hasParent()) {
+ *     var commit = navigator.pullParent();
  *     System.out.println("Checked out commit: " + commit.getCommitHash());
  * }
  * }</pre>
@@ -34,56 +34,55 @@ import java.nio.file.Path;
  */
 public interface CommitNavigator {
   /**
-   * Moves to the next commit in the history and returns its metadata.
+   * Fetch the child commit in the history and returns its metadata.
    *
-   * @return the {@link CommitMetadata} of the next commit
-   * @throws RepositoryException if there is no next commit or if an error occurs during navigation
+   * @return the {@link CommitMetadata} of the child commit
+   * @throws RepositoryException if there is no child commit or if an error occurs during navigation
    */
-  CommitMetadata next() throws RepositoryException;
+  CommitMetadata fetchChild() throws RepositoryException;
 
   /**
-   * Moves to the previous commit in the history and returns its metadata.
+   * Fetch the parent commit in the history and returns its metadata.
    *
-   * @return the {@link CommitMetadata} of the previous commit
-   * @throws RepositoryException if there is no previous commit or if an error occurs during
+   * @return the {@link CommitMetadata} of the parent commit
+   * @throws RepositoryException if there is no parent commit or if an error occurs during
    *     navigation
    */
-  CommitMetadata previous() throws RepositoryException;
+  CommitMetadata fetchParent() throws RepositoryException;
 
   /**
-   * Moves to the next commit in the history and checks out the working directory to that commit.
+   * Fetch the child commit in the history and checks out the working directory to that commit.
    *
-   * @return the {@link CommitMetadata} of the next commit
-   * @throws RepositoryException if there is no next commit, if checkout fails, or if an error
+   * @return the {@link CommitMetadata} of the child commit
+   * @throws RepositoryException if there is no child commit, if checkout fails, or if an error
    *     occurs during navigation
    */
-  CommitMetadata nextAndCheckout() throws RepositoryException;
+  CommitMetadata pullChild() throws RepositoryException;
 
   /**
-   * Moves to the previous commit in the history and checks out the working directory to that
-   * commit.
+   * Fetch the parent commit in the history and checks out the working directory to that commit.
    *
-   * @return the {@link CommitMetadata} of the previous commit
-   * @throws RepositoryException if there is no previous commit, if checkout fails, or if an error
+   * @return the {@link CommitMetadata} of the parent commit
+   * @throws RepositoryException if there is no parent commit, if checkout fails, or if an error
    *     occurs during navigation
    */
-  CommitMetadata previousAndCheckout() throws RepositoryException;
+  CommitMetadata pullParent() throws RepositoryException;
 
   /**
-   * Checks if there is a next commit available for navigation.
+   * Checks if there is a child commit available for navigation.
    *
-   * @return true if there is a next commit, false otherwise
-   * @throws RepositoryException if an error occurs while checking for the next commit
+   * @return true if there is a child commit, false otherwise
+   * @throws RepositoryException if an error occurs while checking for the child commit
    */
-  boolean hasNext() throws RepositoryException;
+  boolean hasChild() throws RepositoryException;
 
   /**
-   * Checks if there is a previous commit available for navigation.
+   * Checks if there is a parent commit available for navigation.
    *
-   * @return true if there is a previous commit, false otherwise
-   * @throws RepositoryException if an error occurs while checking for the previous commit
+   * @return true if there is a parent commit, false otherwise
+   * @throws RepositoryException if an error occurs while checking for the parent commit
    */
-  boolean hasPrevious() throws RepositoryException;
+  boolean hasParent() throws RepositoryException;
 
   /**
    * Returns the total number of commits available in the navigation sequence.
@@ -92,7 +91,6 @@ public interface CommitNavigator {
    * @throws RepositoryException if an error occurs while getting for the total commit count
    */
   long getCommitCount() throws RepositoryException;
-  ;
 
   /**
    * Returns the metadata of the current commit without changing the navigation position.

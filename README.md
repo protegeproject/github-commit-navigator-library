@@ -45,18 +45,18 @@ repository.initialize();
 var commitNavigator = repository.getCommitNavigator();
 
 // Navigate through commits
-while (commitNavigator.hasPrevious()) {
-    var commit = commitNavigator.previous();
+while (commitNavigator.hasParent()) {
+    var commit = commitNavigator.fetchParent();
     System.out.println("Commit: " + commit.getCommitHash());
-    System.out.println("Author: " + commit.getCommitterUsername());
+    System.out.println("Author: " + commit.getCommitterUsername() + " (" + commit.getCommitterEmail() + ")");
     System.out.println("Date: " + commit.getCommitDate());
     System.out.println("Message: " + commit.getCommitMessage());
     System.out.println("---");
 }
 
 // Navigate with checkout
-while (commitNavigator.hasPrevious()) {
-    var commit = commitNavigator.previousAndCheckout();
+while (commitNavigator.hasParent()) {
+    var commit = commitNavigator.pullParent();
     System.out.println("Checked out commit: " + commit.getCommitHash());
 }
 
@@ -134,14 +134,14 @@ var commitNavigator = repository.getCommitNavigator(navigatorConfig);
 
 ## Navigation Methods
 
-- `next()` - Move to next commit (returns `CommitMetadata`)
-- `previous()` - Move to previous commit (returns `CommitMetadata`)
-- `hasNext()` - Check if next commit exists
-- `hasPrevious()` - Check if previous commit exists
+- `fetchChild()` - Move to child commit (newer, returns `CommitMetadata`)
+- `fetchParent()` - Move to parent commit (older, returns `CommitMetadata`)
+- `hasChild()` - Check if child commit exists
+- `hasParent()` - Check if parent commit exists
 - `getCurrentCommit()` - Get current commit metadata
 - `reset()` - Reset navigator to initial state
-- `nextAndCheckout()` - Move to next commit and checkout working directory
-- `previousAndCheckout()` - Move to previous commit and checkout working directory
+- `pullChild()` - Move to child commit and checkout working directory
+- `pullParent()` - Move to parent commit and checkout working directory
 
 
 ## Command Line Interface
