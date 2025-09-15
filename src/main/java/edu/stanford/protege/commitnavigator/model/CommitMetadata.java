@@ -43,12 +43,14 @@ import java.util.Objects;
 public record CommitMetadata(
     @JsonProperty("commitHash") String commitHash,
     @JsonProperty("committerUsername") String committerUsername,
+    @JsonProperty("committerEmail") String committerEmail,
     @JsonProperty("commitDate") @JsonFormat(shape = JsonFormat.Shape.STRING) Instant commitDate,
     @JsonProperty("commitMessage") String commitMessage) {
 
   public CommitMetadata {
     Objects.requireNonNull(commitHash, "Commit hash cannot be null");
     Objects.requireNonNull(committerUsername, "Committer username cannot be null");
+    Objects.requireNonNull(committerEmail, "Committer email cannot be null");
     Objects.requireNonNull(commitDate, "Commit date cannot be null");
     Objects.requireNonNull(commitMessage, "Commit message cannot be null");
   }
@@ -61,14 +63,20 @@ public record CommitMetadata(
    *
    * @param commitHash the full SHA-1 hash of the commit
    * @param committerUsername the username of the person who committed the changes
+   * @param committerEmail the email of the person who committed the changes
    * @param commitDate the exact moment when the commit was made (timezone-independent)
    * @param commitMessage the commit message describing the changes
    * @return a new {@link CommitMetadata} instance
    * @throws NullPointerException if any parameter is null
    */
   public static CommitMetadata create(
-      String commitHash, String committerUsername, Instant commitDate, String commitMessage) {
-    return new CommitMetadata(commitHash, committerUsername, commitDate, commitMessage);
+      String commitHash,
+      String committerUsername,
+      String committerEmail,
+      Instant commitDate,
+      String commitMessage) {
+    return new CommitMetadata(
+        commitHash, committerUsername, committerEmail, commitDate, commitMessage);
   }
 
   /**
@@ -87,6 +95,15 @@ public record CommitMetadata(
    */
   public String getCommitterUsername() {
     return committerUsername;
+  }
+
+  /**
+   * Returns the email of the person who committed the changes.
+   *
+   * @return the committer email
+   */
+  public String getCommitterEmail() {
+    return committerEmail;
   }
 
   /**

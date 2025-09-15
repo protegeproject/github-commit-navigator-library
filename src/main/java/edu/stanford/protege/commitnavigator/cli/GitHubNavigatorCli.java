@@ -124,6 +124,9 @@ public class GitHubNavigatorCli implements Callable<Integer> {
                 + commit.getCommitHash()
                 + " by "
                 + commit.getCommitterUsername()
+                + "("
+                + commit.getCommitterEmail()
+                + ")"
                 + " on "
                 + commit.getCommitDate()
                 + "\n"

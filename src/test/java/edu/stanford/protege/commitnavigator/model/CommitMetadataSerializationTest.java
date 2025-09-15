@@ -20,7 +20,11 @@ class CommitMetadataSerializationTest {
 
     var original =
         new CommitMetadata(
-            "def456", "recorduser", Instant.parse("2023-06-15T10:30:00Z"), "Record pattern commit");
+            "def456",
+            "recorduser",
+            "recorduser@example.com",
+            Instant.parse("2023-06-15T10:30:00Z"),
+            "Record pattern commit");
 
     // Serialize to JSON
     var json = mapper.writeValueAsString(original);
@@ -46,7 +50,11 @@ class CommitMetadataSerializationTest {
   void testRecordStringRepresentation() {
     var commit =
         CommitMetadata.create(
-            "xyz789", "recorduser", Instant.parse("2023-12-01T14:45:30Z"), "Record test commit");
+            "xyz789",
+            "recorduser",
+            "recorduser@example.com",
+            Instant.parse("2023-12-01T14:45:30Z"),
+            "Record test commit");
 
     var toString = commit.toString();
     logger.debug("Record toString: {}", toString);

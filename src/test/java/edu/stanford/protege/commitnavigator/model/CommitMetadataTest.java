@@ -19,7 +19,11 @@ class CommitMetadataTest {
 
     var original =
         CommitMetadata.create(
-            "abc123", "testuser", Instant.parse("2023-01-01T12:00:00Z"), "Test commit message");
+            "abc123",
+            "testuser",
+            "testuser@example.com",
+            Instant.parse("2023-01-01T12:00:00Z"),
+            "Test commit message");
 
     var json = mapper.writeValueAsString(original);
     logger.debug("JSON: {}", json);
@@ -36,11 +40,19 @@ class CommitMetadataTest {
   void testEqualsAndHashCode() {
     var commit1 =
         CommitMetadata.create(
-            "abc123", "testuser", Instant.parse("2023-01-01T12:00:00Z"), "Test commit message");
+            "abc123",
+            "testuser",
+            "testuser@example.com",
+            Instant.parse("2023-01-01T12:00:00Z"),
+            "Test commit message");
 
     var commit2 =
         CommitMetadata.create(
-            "abc123", "testuser", Instant.parse("2023-01-01T12:00:00Z"), "Test commit message");
+            "abc123",
+            "testuser",
+            "testuser@example.com",
+            Instant.parse("2023-01-01T12:00:00Z"),
+            "Test commit message");
 
     assertEquals(commit1, commit2);
     assertEquals(commit1.hashCode(), commit2.hashCode());

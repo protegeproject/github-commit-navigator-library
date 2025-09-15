@@ -358,9 +358,11 @@ public class CommitNavigatorImpl implements CommitNavigator {
   private CommitMetadata createCommitMetadata(RevCommit commit) {
     var commitHash = commit.getName();
     var committerUsername = commit.getCommitterIdent().getName();
+    var committerEmail = commit.getCommitterIdent().getEmailAddress();
     var commitDate = commit.getCommitterIdent().getWhen().toInstant();
     var commitMessage = commit.getFullMessage();
 
-    return CommitMetadata.create(commitHash, committerUsername, commitDate, commitMessage);
+    return CommitMetadata.create(
+        commitHash, committerUsername, committerEmail, commitDate, commitMessage);
   }
 }
