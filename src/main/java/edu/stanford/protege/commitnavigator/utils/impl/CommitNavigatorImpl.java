@@ -195,6 +195,18 @@ public class CommitNavigatorImpl implements CommitNavigator {
   }
 
   /**
+   * Returns the total number of commits available in the navigation sequence.
+   *
+   * @return the total commit count
+   * @throws RepositoryException if an error occurs while getting for the total commit count
+   */
+  @Override
+  public long getCommitCount() throws RepositoryException {
+    ensureInitialized();
+    return filteredCommits.size();
+  }
+
+  /**
    * Returns the metadata of the current commit without changing the navigation position.
    *
    * <p>This method provides access to the current commit's metadata without affecting the

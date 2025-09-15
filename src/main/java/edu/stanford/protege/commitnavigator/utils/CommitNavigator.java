@@ -86,6 +86,15 @@ public interface CommitNavigator {
   boolean hasPrevious() throws RepositoryException;
 
   /**
+   * Returns the total number of commits available in the navigation sequence.
+   *
+   * @return the total commit count
+   * @throws RepositoryException if an error occurs while getting for the total commit count
+   */
+  long getCommitCount() throws RepositoryException;
+  ;
+
+  /**
    * Returns the metadata of the current commit without changing the navigation position.
    *
    * @return the {@link CommitMetadata} of the current commit
