@@ -310,9 +310,6 @@ public class CommitNavigatorImpl implements CommitNavigator {
           commits.add(commit);
         }
       }
-
-      commits.sort((c1, c2) -> c1.getCommitTime() - c2.getCommitTime());
-
       return commits;
 
     } catch (IOException e) {
