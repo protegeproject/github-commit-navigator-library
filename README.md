@@ -31,7 +31,7 @@ import edu.stanford.protege.commitnavigator.utils.CommitNavigator;
 import edu.stanford.protege.commitnavigator.model.CommitMetadata;
 
 // Create repository coordinate from URL
-var coordinate = RepositoryCoordinates.createFromUrl("https://github.com/example/repo.git");
+var coordinate = RepositoryCoordinates.createFromUrl("https://github.com/example/repo");
 
 // Create repository using factory pattern
 var repository = GitHubRepositoryBuilderFactory.create(coordinate)
@@ -68,7 +68,7 @@ repository.close();
 
 ```java
 // Create repository coordinate for the repository and branch
-var coordinate = RepositoryCoordinates.createFromUrl("https://github.com/example/repo.git", "develop");
+var coordinate = RepositoryCoordinates.createFromUrl("https://github.com/example/repo", "develop");
 
 // Configure repository with advanced options
 var repository = GitHubRepositoryBuilderFactory.create(coordinate)
@@ -100,7 +100,7 @@ For public repositories, authentication is optional:
 
 ```java
 // Create coordinate for public repository
-var coordinates = RepositoryCoordinates.createFromUrl("https://github.com/public/repo.git");
+var coordinates = RepositoryCoordinates.createFromUrl("https://github.com/public/repo");
 
 // Create repository without authentication
 var repository = GitHubRepositoryBuilderFactory.create(coordinates)
@@ -150,7 +150,7 @@ The library includes a CLI for quick repository analysis:
 
 ```bash
 # Basic usage
-java -jar github-commit-navigator-1.0.0.jar https://github.com/user/repo.git
+java -jar github-commit-navigator-1.0.0.jar https://github.com/user/repo
 
 # With authentication and filters
 java -jar github-commit-navigator-1.0.0.jar \

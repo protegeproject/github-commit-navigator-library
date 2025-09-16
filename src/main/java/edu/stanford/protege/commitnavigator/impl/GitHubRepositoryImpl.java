@@ -108,7 +108,7 @@ public class GitHubRepositoryImpl implements GitHubRepository {
    */
   @Override
   public void initialize() throws GitHubNavigatorException {
-    logger.info("Initializing GitHub repository navigator for: {}", config.getRepositoryUrl());
+    logger.info("Initializing GitHub repository navigator for: {}", config.getCloneUrl());
 
     try {
       authenticateWithGitHub();
@@ -277,27 +277,12 @@ public class GitHubRepositoryImpl implements GitHubRepository {
     }
 
     try {
-      var repoName = extractRepositoryName(config.getRepositoryUrl());
+      var repoName = config.getRepositoryName();
       var tempDir = Files.createTempDirectory("github-navigator-");
       return tempDir.resolve(repoName);
     } catch (IOException e) {
       throw new GitHubNavigatorException("Failed to create temporary directory", e);
     }
-  }
-
-  /**
-   * Extracts the repository name from a GitHub repository URL.
-   *
-   * @param repositoryUrl the GitHub repository URL
-   * @return the repository name without the .git suffix
-   */
-  private String extractRepositoryName(String repositoryUrl) {
-    var parts = repositoryUrl.split("/");
-    var repoName = parts[parts.length - 1];
-    if (repoName.endsWith(".git")) {
-      repoName = repoName.substring(0, repoName.length() - 4);
-    }
-    return repoName;
   }
 
   /**
@@ -411,7 +396,7 @@ public class GitHubRepositoryImpl implements GitHubRepository {
   private void cloneRepository(Path localPath)
       throws GitAPIException, AuthenticationException, IOException {
     var cloneCommand = Git.cloneRepository();
-    cloneCommand.setURI(config.getRepositoryUrl());
+    cloneCommand.setURI(config.getCloneUrl());
     cloneCommand.setDirectory(localPath.toFile());
     cloneCommand.setBranch(config.getBranch());
 

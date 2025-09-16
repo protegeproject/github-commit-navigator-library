@@ -18,7 +18,8 @@ class RepositoryConfigTest {
             .shallowClone(true)
             .build();
 
-    assertEquals("https://github.com/example/repo.git", config.getRepositoryUrl());
+    assertEquals("https://github.com/example/repo", config.getRepositoryUrl());
+    assertEquals("https://github.com/example/repo.git", config.getCloneUrl());
     assertEquals(Paths.get("/tmp/test"), config.getLocalCloneDirectory());
     assertEquals("develop", config.getBranch());
     assertTrue(config.isShallowClone());
@@ -30,7 +31,8 @@ class RepositoryConfigTest {
 
     var config = RepositoryConfig.builder(coordinate).build();
 
-    assertEquals("https://github.com/example/repo.git", config.getRepositoryUrl());
+    assertEquals("https://github.com/example/repo", config.getRepositoryUrl());
+    assertEquals("https://github.com/example/repo.git", config.getCloneUrl());
     assertNotNull(config.getLocalCloneDirectory()); // Default directory is set
     assertEquals("main", config.getBranch());
     assertFalse(config.isShallowClone());

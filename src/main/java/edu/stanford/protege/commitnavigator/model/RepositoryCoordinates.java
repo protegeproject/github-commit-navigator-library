@@ -37,7 +37,7 @@ public record RepositoryCoordinates(String ownerName, String repositoryName, Str
   }
 
   /** Builds the GitHub repository URL from the repository coordinate. */
-  public String gitHubUrl() {
-    return String.format("https://github.com/%s/%s.git", ownerName, repositoryName);
+  public String repositoryUrl() {
+    return String.format("https://github.com/%s/%s", ownerName, repositoryName);
   }
 }

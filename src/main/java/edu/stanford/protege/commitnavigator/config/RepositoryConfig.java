@@ -45,12 +45,21 @@ public class RepositoryConfig {
   }
 
   /**
-   * Returns the GitHub repository URL.
+   * Returns the GitHub repository web URL.
    *
-   * @return the repository URL (HTTPS or SSH format)
+   * @return the repository URL
    */
   public String getRepositoryUrl() {
     return repoUrl;
+  }
+
+  /**
+   * Returns the GitHub repository clone URL.
+   *
+   * @return the repository clone URL (HTTPS format)
+   */
+  public String getCloneUrl() {
+    return repoUrl + ".git";
   }
 
   /**
@@ -108,7 +117,7 @@ public class RepositoryConfig {
    */
   public static Builder builder(RepositoryCoordinates repositoryCoordinates) {
     return new Builder(
-        repositoryCoordinates.gitHubUrl(),
+        repositoryCoordinates.repositoryUrl(),
         repositoryCoordinates.repositoryName(),
         repositoryCoordinates.branchName());
   }

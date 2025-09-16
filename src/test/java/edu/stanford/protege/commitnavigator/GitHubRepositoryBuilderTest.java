@@ -23,7 +23,8 @@ class GitHubRepositoryBuilderTest {
 
     assertNotNull(navigator);
     var config = navigator.getConfig();
-    assertEquals("https://github.com/example/repo.git", config.getRepositoryUrl());
+    assertEquals("https://github.com/example/repo", config.getRepositoryUrl());
+    assertEquals("https://github.com/example/repo.git", config.getCloneUrl());
     assertTrue(config.getAuthConfig().isPresent());
     assertEquals(
         AuthenticationConfig.AuthenticationType.PERSONAL_ACCESS_TOKEN,
@@ -82,7 +83,8 @@ class GitHubRepositoryBuilderTest {
 
     assertNotNull(navigator);
     var config = navigator.getConfig();
-    assertEquals("https://github.com/example/repo.git", config.getRepositoryUrl());
+    assertEquals("https://github.com/example/repo", config.getRepositoryUrl());
+    assertEquals("https://github.com/example/repo.git", config.getCloneUrl());
     assertEquals(Paths.get(localPath), config.getLocalCloneDirectory());
     assertEquals(branch, config.getBranch());
     assertTrue(config.isShallowClone());
@@ -96,7 +98,8 @@ class GitHubRepositoryBuilderTest {
 
     assertNotNull(navigator);
     var config = navigator.getConfig();
-    assertEquals("https://github.com/example/public-repo.git", config.getRepositoryUrl());
+    assertEquals("https://github.com/example/public-repo", config.getRepositoryUrl());
+    assertEquals("https://github.com/example/public-repo.git", config.getCloneUrl());
     assertFalse(config.getAuthConfig().isPresent());
     assertEquals("main", config.getBranch());
   }
