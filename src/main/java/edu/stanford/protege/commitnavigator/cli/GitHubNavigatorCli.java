@@ -39,13 +39,13 @@ import picocli.CommandLine.Parameters;
     name = "github-navigator",
     description = "Navigate GitHub repository commits programmatically",
     mixinStandardHelpOptions = true,
-    version = "1.0.0")
+    version = "1.2.0")
 public class GitHubNavigatorCli implements Callable<Integer> {
   private static final Logger logger = LoggerFactory.getLogger(GitHubNavigatorCli.class);
 
   @Parameters(
       index = "0",
-      description = "The GitHub repository URL (e.g., https://github.com/user/repo.git)")
+      description = "The GitHub repository URL (e.g., https://github.com/user/repo)")
   private String repositoryUrl;
 
   @Option(

@@ -6,7 +6,7 @@
 
     <groupId>edu.stanford.protege</groupId>
     <artifactId>github-commit-navigator</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
     <packaging>jar</packaging>
 
     <name>GitHub Commit Navigator Library</name>
