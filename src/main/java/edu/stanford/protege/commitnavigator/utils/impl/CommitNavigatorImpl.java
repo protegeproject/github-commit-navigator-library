@@ -95,7 +95,7 @@ public class CommitNavigatorImpl implements CommitNavigator {
       return null;
     }
 
-    currentIndex++;
+    currentIndex--;
     var commit = filteredCommits.get(currentIndex);
     logger.debug("Navigated to child commit: {}", commit.getName());
     return createCommitMetadata(commit);
@@ -118,7 +118,7 @@ public class CommitNavigatorImpl implements CommitNavigator {
       return null;
     }
 
-    currentIndex--;
+    currentIndex++;
     var commit = filteredCommits.get(currentIndex);
     logger.debug("Navigated to parent commit: {}", commit.getName());
     return createCommitMetadata(commit);
@@ -176,7 +176,7 @@ public class CommitNavigatorImpl implements CommitNavigator {
   @Override
   public boolean hasChild() throws RepositoryException {
     ensureInitialized();
-    return currentIndex < filteredCommits.size() - 1;
+    return currentIndex > 0;
   }
 
   /**
@@ -191,7 +191,7 @@ public class CommitNavigatorImpl implements CommitNavigator {
   @Override
   public boolean hasParent() throws RepositoryException {
     ensureInitialized();
-    return currentIndex > 0;
+    return currentIndex < filteredCommits.size() - 1;
   }
 
   /**
@@ -280,10 +280,10 @@ public class CommitNavigatorImpl implements CommitNavigator {
               "No commit found for starting commit {} that includes the file in the filter",
               startingCommit);
           logger.warn("Starting at the latest commit instead.");
-          currentIndex = filteredCommits.size() - 1;
+          currentIndex = 0;
         }
       } else {
-        currentIndex = filteredCommits.size() - 1;
+        currentIndex = 0;
       }
 
       initialized = true;
