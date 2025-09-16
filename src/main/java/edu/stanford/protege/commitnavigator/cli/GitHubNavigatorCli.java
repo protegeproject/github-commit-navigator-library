@@ -118,7 +118,7 @@ public class GitHubNavigatorCli implements Callable<Integer> {
       var commitNavigator = repository.getCommitNavigator(navigatorConfig);
 
       while (commitNavigator.hasParent()) {
-        var commit = commitNavigator.fetchParent();
+        var commit = commitNavigator.checkoutParent();
         System.out.println(
             "commit "
                 + commit.getCommitHash()

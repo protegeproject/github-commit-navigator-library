@@ -79,52 +79,6 @@ public class CommitNavigatorImpl implements CommitNavigator {
   }
 
   /**
-   * Moves to the child commit in the filtered commit history.
-   *
-   * <p>This method advances the internal index and returns the metadata of the child commit. If no
-   * child commit is available, returns null.
-   *
-   * @return the {@link CommitMetadata} of the child commit, or null if no child commit exists
-   * @throws RepositoryException if an error occurs during navigation or repository access
-   */
-  @Override
-  public CommitMetadata fetchChild() throws RepositoryException {
-    ensureInitialized();
-
-    if (!hasChild()) {
-      return null;
-    }
-
-    currentIndex--;
-    var commit = filteredCommits.get(currentIndex);
-    logger.debug("Navigated to child commit: {}", commit.getName());
-    return createCommitMetadata(commit);
-  }
-
-  /**
-   * Moves to the parent commit in the filtered commit history.
-   *
-   * <p>This method decrements the internal index and returns the metadata of the parent commit. If
-   * no parent commit is available, returns null.
-   *
-   * @return the {@link CommitMetadata} of the parent commit, or null if no parent commit exists
-   * @throws RepositoryException if an error occurs during navigation or repository access
-   */
-  @Override
-  public CommitMetadata fetchParent() throws RepositoryException {
-    ensureInitialized();
-
-    if (!hasParent()) {
-      return null;
-    }
-
-    currentIndex++;
-    var commit = filteredCommits.get(currentIndex);
-    logger.debug("Navigated to parent commit: {}", commit.getName());
-    return createCommitMetadata(commit);
-  }
-
-  /**
    * Moves to the child commit and checks out the working directory to that commit.
    *
    * <p>This method combines navigation and checkout operations. It first moves to the child commit,
@@ -136,12 +90,22 @@ public class CommitNavigatorImpl implements CommitNavigator {
    *     access
    */
   @Override
-  public CommitMetadata pullChild() throws RepositoryException {
-    var commitMetadata = fetchChild();
-    if (commitMetadata != null) {
-      checkout(commitMetadata.getCommitHash());
+  public CommitMetadata checkoutChild() throws RepositoryException {
+    ensureInitialized();
+    try {
+      // Move to the previous commit index and get the commit object
+      currentIndex--;
+      var commit = filteredCommits.get(currentIndex);
+      logger.debug("Navigated to child commit: {}", commit.getName());
+
+      // Checkout that commit
+      checkout(commit.getName());
+
+      return createCommitMetadata(commit);
+    } catch (IndexOutOfBoundsException e) {
+      throw new RepositoryException(
+          "Traversal stopped: reached HEAD no further child commits available", e);
     }
-    return commitMetadata;
   }
 
   /**
@@ -156,12 +120,22 @@ public class CommitNavigatorImpl implements CommitNavigator {
    *     access
    */
   @Override
-  public CommitMetadata pullParent() throws RepositoryException {
-    var commitMetadata = fetchParent();
-    if (commitMetadata != null) {
-      checkout(commitMetadata.getCommitHash());
+  public CommitMetadata checkoutParent() throws RepositoryException {
+    ensureInitialized();
+    try {
+      // Move to the next commit index and get the commit object
+      currentIndex++;
+      var commit = filteredCommits.get(currentIndex);
+      logger.debug("Navigated to parent commit: {}", commit.getName());
+
+      // Checkout that commit
+      checkout(commit.getName());
+
+      return createCommitMetadata(commit);
+    } catch (IndexOutOfBoundsException e) {
+      throw new RepositoryException(
+          "Traversal stopped: reached HEAD no further child commits available", e);
     }
-    return commitMetadata;
   }
 
   /**

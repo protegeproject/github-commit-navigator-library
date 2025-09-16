@@ -33,40 +33,24 @@ import java.nio.file.Path;
  * @since 1.0.0
  */
 public interface CommitNavigator {
-  /**
-   * Fetch the child commit in the history and returns its metadata.
-   *
-   * @return the {@link CommitMetadata} of the child commit
-   * @throws RepositoryException if there is no child commit or if an error occurs during navigation
-   */
-  CommitMetadata fetchChild() throws RepositoryException;
 
   /**
-   * Fetch the parent commit in the history and returns its metadata.
-   *
-   * @return the {@link CommitMetadata} of the parent commit
-   * @throws RepositoryException if there is no parent commit or if an error occurs during
-   *     navigation
-   */
-  CommitMetadata fetchParent() throws RepositoryException;
-
-  /**
-   * Fetch the child commit in the history and checks out the working directory to that commit.
+   * Checks out the child commit to the working directory.
    *
    * @return the {@link CommitMetadata} of the child commit
    * @throws RepositoryException if there is no child commit, if checkout fails, or if an error
    *     occurs during navigation
    */
-  CommitMetadata pullChild() throws RepositoryException;
+  CommitMetadata checkoutChild() throws RepositoryException;
 
   /**
-   * Fetch the parent commit in the history and checks out the working directory to that commit.
+   * Checks out the parent commit to the working directory.
    *
    * @return the {@link CommitMetadata} of the parent commit
    * @throws RepositoryException if there is no parent commit, if checkout fails, or if an error
    *     occurs during navigation
    */
-  CommitMetadata pullParent() throws RepositoryException;
+  CommitMetadata checkoutParent() throws RepositoryException;
 
   /**
    * Checks if there is a child commit available for navigation.
