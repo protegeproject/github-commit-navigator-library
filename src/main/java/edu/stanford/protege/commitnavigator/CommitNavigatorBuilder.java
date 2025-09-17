@@ -2,9 +2,10 @@ package edu.stanford.protege.commitnavigator;
 
 import edu.stanford.protege.commitnavigator.exceptions.RepositoryException;
 import edu.stanford.protege.commitnavigator.utils.CommitNavigator;
-import edu.stanford.protege.commitnavigator.utils.FileChangeDetector;
+import edu.stanford.protege.commitnavigator.utils.FileChangeAnalyzer;
 import edu.stanford.protege.commitnavigator.utils.impl.CommitNavigatorImpl;
-import edu.stanford.protege.commitnavigator.utils.impl.FileChangeDetectorImpl;
+import edu.stanford.protege.commitnavigator.utils.impl.FileChangeAnalyzerImpl;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -239,14 +240,14 @@ public class CommitNavigatorBuilder {
       throws IOException, RepositoryException {
     logger.debug("Collecting relevant commits from repository");
 
-    var fileChangeDetector = new FileChangeDetectorImpl();
+    var fileChangeAnalyzer = new FileChangeAnalyzerImpl();
 
     try (var revWalk = new RevWalk(repository)) {
       revWalk.markStart(revWalk.parseCommit(repository.resolve("HEAD")));
 
       var commits = new ArrayList<RevCommit>();
       for (RevCommit commit : revWalk) {
-        if (shouldIncludeCommit(repository, commit, fileChangeDetector)) {
+        if (shouldIncludeCommit(repository, commit, fileChangeAnalyzer)) {
           commits.add(commit);
         }
       }
@@ -258,12 +259,12 @@ public class CommitNavigatorBuilder {
   }
 
   private boolean shouldIncludeCommit(
-      Repository repository, RevCommit commit, FileChangeDetector fileChangeDetector)
+      Repository repository, RevCommit commit, FileChangeAnalyzer fileChangeAnalyzer)
       throws RepositoryException {
     if (fileFilters == null || fileFilters.isEmpty()) {
       return true;
     }
-    return fileChangeDetector.hasFileChanges(repository, commit, fileFilters);
+    return fileChangeAnalyzer.hasFileChanges(repository, commit, fileFilters);
   }
 
   /**

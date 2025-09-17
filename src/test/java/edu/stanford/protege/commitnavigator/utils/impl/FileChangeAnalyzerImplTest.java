@@ -7,13 +7,13 @@ import java.util.Collections;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class FileChangeDetectorImplTest {
+class FileChangeAnalyzerImplTest {
 
-  private FileChangeDetectorImpl fileChangeDetector;
+  private FileChangeAnalyzerImpl fileChangeDetector;
 
   @BeforeEach
   void setUp() {
-    fileChangeDetector = new FileChangeDetectorImpl();
+    fileChangeDetector = new FileChangeAnalyzerImpl();
   }
 
   @Test
@@ -24,7 +24,7 @@ class FileChangeDetectorImplTest {
 
   @Test
   void testMatchesFilter_ExactMatch() {
-    var detector = new FileChangeDetectorImpl();
+    var detector = new FileChangeAnalyzerImpl();
 
     assertTrue(detector.matchesFilter("src/main/java/Test.java", "src/main/java/Test.java"));
     assertTrue(detector.matchesFilter("src/main/java/Test.java", "Test.java"));
@@ -33,7 +33,7 @@ class FileChangeDetectorImplTest {
 
   @Test
   void testMatchesFilter_GlobPattern() {
-    var detector = new FileChangeDetectorImpl();
+    var detector = new FileChangeAnalyzerImpl();
 
     assertTrue(detector.matchesFilter("Test.java", "*.java"));
     assertTrue(detector.matchesFilter("Test.java", "Test.*"));
@@ -46,7 +46,7 @@ class FileChangeDetectorImplTest {
 
   @Test
   void testMatchesAnyFilter() {
-    var detector = new FileChangeDetectorImpl();
+    var detector = new FileChangeAnalyzerImpl();
     var filters = Arrays.asList("*.java", "*.md", "pom.xml");
 
     assertTrue(detector.matchesAnyFilter("Test.java", filters));

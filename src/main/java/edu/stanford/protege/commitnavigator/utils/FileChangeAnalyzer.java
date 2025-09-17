@@ -14,7 +14,7 @@ import org.eclipse.jgit.revwalk.RevCommit;
  *
  * @since 1.0.0
  */
-public interface FileChangeDetector {
+public interface FileChangeAnalyzer {
   /**
    * Checks if the specified commit has file changes that match the provided filters.
    *

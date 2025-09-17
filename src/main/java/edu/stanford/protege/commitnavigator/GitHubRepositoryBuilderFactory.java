@@ -2,7 +2,6 @@ package edu.stanford.protege.commitnavigator;
 
 import edu.stanford.protege.commitnavigator.model.RepositoryCoordinates;
 import edu.stanford.protege.commitnavigator.utils.AuthenticationManager;
-import edu.stanford.protege.commitnavigator.utils.FileChangeDetector;
 import edu.stanford.protege.commitnavigator.utils.impl.AuthenticationManagerImpl;
 import java.util.Objects;
 
@@ -20,7 +19,7 @@ import java.util.Objects;
  * // Public repository
  * var coordinate = RepositoryCoordinates.create("owner", "repo");
  * var repository = GitHubRepositoryBuilderFactory.create(coordinate)
- *     .localCloneDirectory("/tmp/repo")
+ *     .localWorkingDirectory("/tmp/repo")
  *     .build();
  * }</pre>
  *
@@ -32,8 +31,7 @@ public class GitHubRepositoryBuilderFactory {
    * Creates a pre-configured builder for accessing public repositories.
    *
    * <p>The returned builder includes default implementations of {@link AuthenticationManager} and
-   * {@link FileChangeDetector}, with the repository URL and branch pre-configured based on the
-   * provided coordinate.
+   * the supplied repository coordinates.
    *
    * @param repositoryCoordinates the repository coordinate containing owner, repo, and branch
    * @return a pre-configured {@link GitHubRepositoryBuilder} for public repository access

@@ -1,7 +1,8 @@
 package edu.stanford.protege.commitnavigator.utils.impl;
 
 import edu.stanford.protege.commitnavigator.exceptions.RepositoryException;
-import edu.stanford.protege.commitnavigator.utils.FileChangeDetector;
+import edu.stanford.protege.commitnavigator.utils.FileChangeAnalyzer;
+
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.util.ArrayList;
@@ -22,7 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Default implementation of {@link FileChangeDetector} that analyzes Git commits to detect file
+ * Default implementation of {@link FileChangeAnalyzer} that analyzes Git commits to detect file
  * changes and apply filtering based on file patterns.
  *
  * <p>This implementation uses JGit's diff functionality to analyze changes between commits and
@@ -45,8 +46,8 @@ import org.slf4j.LoggerFactory;
  * @since 1.0.0
  */
 @Singleton
-public class FileChangeDetectorImpl implements FileChangeDetector {
-  private static final Logger logger = LoggerFactory.getLogger(FileChangeDetectorImpl.class);
+public class FileChangeAnalyzerImpl implements FileChangeAnalyzer {
+  private static final Logger logger = LoggerFactory.getLogger(FileChangeAnalyzerImpl.class);
 
   /**
    * Checks if the specified commit has file changes that match the provided filters.
