@@ -12,14 +12,11 @@ import java.util.Optional;
  * authentication settings, and clone behavior. The configuration is immutable and uses the builder
  * pattern for construction.
  *
- * <p>Navigation-specific options such as file filters and starting commit are now configured
- * separately using {@link CommitNavigatorConfig}.
- *
  * <p>Usage example:
  *
  * <pre>{@code
  * var config = RepositoryConfig.builder(repositoryCoordinates)
- *     .localCloneDirectory(Paths.get("/tmp/repo"))
+ *     .localWorkingDirectory(Paths.get("/tmp/repo"))
  *     .shallowClone(true)
  *     .authConfig(authConfig)
  *     .build();
@@ -30,7 +27,7 @@ import java.util.Optional;
 public class RepositoryConfig {
   private final String repoUrl;
   private final String repoName;
-  private final Path localCloneDirectory;
+  private final Path localWorkingDirectory;
   private final String branch;
   private final boolean shallowClone;
   private final AuthenticationConfig authConfig;
@@ -39,7 +36,7 @@ public class RepositoryConfig {
     this.repoUrl = Objects.requireNonNull(builder.repoUrl, "Repository URL cannot be null");
     this.repoName = Objects.requireNonNull(builder.repoName, "Repository name cannot be null");
     this.branch = Objects.requireNonNull(builder.branch, "Branch cannot be null");
-    this.localCloneDirectory = builder.localCloneDirectory;
+    this.localWorkingDirectory = builder.localWorkingDirectory;
     this.shallowClone = builder.shallowClone;
     this.authConfig = builder.authConfig;
   }
@@ -74,10 +71,10 @@ public class RepositoryConfig {
   /**
    * Returns the local directory path where the repository will be cloned.
    *
-   * @return the local clone directory path, or null if not specified
+   * @return the local working directory path, or null if not specified
    */
-  public Path getLocalCloneDirectory() {
-    return localCloneDirectory;
+  public Path getLocalWorkingDirectory() {
+    return localWorkingDirectory;
   }
 
   /**
@@ -131,7 +128,7 @@ public class RepositoryConfig {
     private final String repoName;
     private final String branch;
 
-    private Path localCloneDirectory;
+    private Path localWorkingDirectory;
     private boolean shallowClone = DEFAULT_SHALLOW_CLONE;
     private AuthenticationConfig authConfig;
 
@@ -139,18 +136,18 @@ public class RepositoryConfig {
       this.repoUrl = Objects.requireNonNull(repositoryUrl, "Repository URL cannot be null");
       this.repoName = Objects.requireNonNull(repoName, "Repository name cannot be null");
       this.branch = Objects.requireNonNull(branchName, "Branch name cannot be null");
-      this.localCloneDirectory =
+      this.localWorkingDirectory =
           Path.of(System.getProperty("java.io.tmpdir"), repoName); // default clone directory
     }
 
     /**
-     * Sets the local directory where the repository will be cloned.
+     * Sets the local working directory where the repository will be cloned.
      *
-     * @param localCloneDirectory the local clone directory path
+     * @param workingDirectory the local working directory path
      * @return this builder instance for method chaining
      */
-    public Builder localCloneDirectory(Path localCloneDirectory) {
-      this.localCloneDirectory = localCloneDirectory;
+    public Builder localWorkingDirectory(Path workingDirectory) {
+      this.localWorkingDirectory = workingDirectory;
       return this;
     }
 

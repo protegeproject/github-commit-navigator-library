@@ -1,7 +1,7 @@
 package edu.stanford.protege.commitnavigator.cli;
 
+import edu.stanford.protege.commitnavigator.CommitNavigatorBuilder;
 import edu.stanford.protege.commitnavigator.GitHubRepositoryBuilderFactory;
-import edu.stanford.protege.commitnavigator.config.CommitNavigatorConfig;
 import edu.stanford.protege.commitnavigator.model.RepositoryCoordinates;
 import java.util.concurrent.Callable;
 import org.slf4j.Logger;
@@ -22,21 +22,21 @@ import picocli.CommandLine.Parameters;
  *
  * <pre>{@code
  * // Basic usage
- * java -jar github-navigator.jar https://github.com/user/repo.git
+ * java -jar github-commit-navigator.jar https://github.com/user/repo.git
  *
  * // With authentication and filters
- * java -jar github-navigator.jar \
+ * java -jar github-commit-navigator.jar \
  *   --token ghp_xxxxxxxxxxxx \
  *   --file-filter "*.java,*.md" \
  *   --branch develop \
- *   --clone-directory /tmp/repo \
+ *   --working-directory /tmp/repo \
  *   https://github.com/user/repo.git
  * }</pre>
  *
  * @since 1.0.0
  */
 @Command(
-    name = "github-navigator",
+    name = "github-commit-navigator",
     description = "Navigate GitHub repository commits programmatically",
     mixinStandardHelpOptions = true,
     version = "1.2.0")
@@ -55,10 +55,10 @@ public class GitHubNavigatorCli implements Callable<Integer> {
   private String branch;
 
   @Option(
-      names = {"-d", "--clone-directory"},
+      names = {"-d", "--working-directory"},
       description =
-          "Local directory path where the repository will be cloned (defaults to system temp directory)")
-  private String cloneDirectory;
+          "Local working directory path where the repository will be cloned (defaults to system temp directory)")
+  private String workingDirectory;
 
   @Option(
       names = {"-f", "--file-filter"},
@@ -95,27 +95,31 @@ public class GitHubNavigatorCli implements Callable<Integer> {
       // Create repositoryBuilder using factory pattern
       var repositoryBuilder = GitHubRepositoryBuilderFactory.create(coordinate);
 
-      if (cloneDirectory != null) {
+      if (workingDirectory != null) {
         // Configure additional options
-        repositoryBuilder.localCloneDirectory(cloneDirectory);
+        repositoryBuilder.localWorkingDirectory(workingDirectory);
       }
 
+      // Initiate the repository
       var repository = repositoryBuilder.build();
-
       repository.initialize();
 
-      // Create navigator configuration with file filters if provided
-      var navigatorConfigBuilder = CommitNavigatorConfig.builder();
+      var activeWorkingDirectory = repository.getWorkingDirectory();
+
+      // Create the commit navigator
+      var commitNavigatorBuilder =
+          CommitNavigatorBuilder.forWorkingDirectory(activeWorkingDirectory);
+
+      // Set commit navigator with file filters if provided
       if (fileFilter != null && !fileFilter.trim().isEmpty()) {
         var filters = fileFilter.split(",");
         for (int i = 0; i < filters.length; i++) {
           filters[i] = filters[i].trim();
         }
-        navigatorConfigBuilder.fileFilters(filters); // Using varargs method
+        commitNavigatorBuilder.fileFilters(filters); // Using varargs method
       }
-      var navigatorConfig = navigatorConfigBuilder.build();
 
-      var commitNavigator = repository.getCommitNavigator(navigatorConfig);
+      var commitNavigator = commitNavigatorBuilder.build();
 
       while (commitNavigator.hasParent()) {
         var commit = commitNavigator.checkoutParent();

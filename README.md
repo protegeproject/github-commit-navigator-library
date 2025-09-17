@@ -157,7 +157,7 @@ java -jar github-commit-navigator-1.0.0.jar \
     --token your-token \
     --file-filter "*.java,*.md" \
     --branch develop \
-    --clone-directory /tmp/repo \
+    --working-directory /tmp/repo \
     https://github.com/user/repo.git
 ```
 
@@ -165,7 +165,7 @@ java -jar github-commit-navigator-1.0.0.jar \
 
 - `-t, --token`: GitHub personal access token
 - `-b, --branch`: Branch to analyze (default: main)
-- `-d, --clone-directory`: Local clone directory
+- `-d, --working-directory`: Local working directory
 - `-f, --file-filter`: Comma-separated file filters
 
 ## Building from Source

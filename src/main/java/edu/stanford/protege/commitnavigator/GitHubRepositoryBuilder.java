@@ -93,8 +93,8 @@ public class GitHubRepositoryBuilder {
    * @param path the local directory path as a string
    * @return this builder instance for method chaining
    */
-  public GitHubRepositoryBuilder localCloneDirectory(String path) {
-    configBuilder.localCloneDirectory(Paths.get(path));
+  public GitHubRepositoryBuilder localWorkingDirectory(String path) {
+    configBuilder.localWorkingDirectory(Paths.get(path));
     return this;
   }
 
@@ -104,8 +104,8 @@ public class GitHubRepositoryBuilder {
    * @param path the local directory path as a {@link Path} object
    * @return this builder instance for method chaining
    */
-  public GitHubRepositoryBuilder localCloneDirectory(Path path) {
-    configBuilder.localCloneDirectory(path);
+  public GitHubRepositoryBuilder localWorkingDirectory(Path path) {
+    configBuilder.localWorkingDirectory(path);
     return this;
   }
 

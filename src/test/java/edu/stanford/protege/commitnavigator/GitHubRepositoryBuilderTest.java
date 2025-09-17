@@ -77,7 +77,7 @@ class GitHubRepositoryBuilderTest {
     var navigator =
         GitHubRepositoryBuilderFactory.create(coordinate)
             .withPersonalAccessToken(token)
-            .localCloneDirectory(localPath)
+            .localWorkingDirectory(localPath)
             .shallowClone(true)
             .build();
 
@@ -85,7 +85,7 @@ class GitHubRepositoryBuilderTest {
     var config = navigator.getConfig();
     assertEquals("https://github.com/example/repo", config.getRepositoryUrl());
     assertEquals("https://github.com/example/repo.git", config.getCloneUrl());
-    assertEquals(Paths.get(localPath), config.getLocalCloneDirectory());
+    assertEquals(Paths.get(localPath), config.getLocalWorkingDirectory());
     assertEquals(branch, config.getBranch());
     assertTrue(config.isShallowClone());
   }
