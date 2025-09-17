@@ -1,14 +1,11 @@
 package edu.stanford.protege.commitnavigator.impl;
 
 import edu.stanford.protege.commitnavigator.GitHubRepository;
-import edu.stanford.protege.commitnavigator.config.CommitNavigatorConfig;
 import edu.stanford.protege.commitnavigator.config.RepositoryConfig;
 import edu.stanford.protege.commitnavigator.exceptions.AuthenticationException;
 import edu.stanford.protege.commitnavigator.exceptions.GitHubNavigatorException;
+import edu.stanford.protege.commitnavigator.exceptions.RepositoryException;
 import edu.stanford.protege.commitnavigator.utils.AuthenticationManager;
-import edu.stanford.protege.commitnavigator.utils.CommitNavigator;
-import edu.stanford.protege.commitnavigator.utils.impl.CommitNavigatorImpl;
-import edu.stanford.protege.commitnavigator.utils.impl.FileChangeDetectorImpl;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -22,39 +19,41 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Default implementation of {@link GitHubRepository} that provides Git repository management and
- * commit navigation functionality.
+ * Default implementation of {@link GitHubRepository} that provides Git repository management
+ * functionality.
  *
  * <p>This implementation handles the complete lifecycle of repository operations including:
  *
  * <ul>
  *   <li>Repository cloning and opening existing repositories
- *   <li>GitHub authentication using various methods
+ *   <li>GitHub authentication using various methods (personal access tokens, SSH keys)
  *   <li>Automatic synchronization with remote repositories
- *   <li>Commit navigation with file filtering support
+ *   <li>Working directory access for file operations
  *   <li>Resource management and cleanup
  * </ul>
  *
- * <p>The implementation uses JGit for Git operations and the GitHub API for authentication and
- * remote repository access. It supports both shallow and full clones, and automatically pulls the
- * latest changes when opening existing repositories.
+ * <p>The implementation uses JGit for Git operations and supports both authenticated and anonymous
+ * access to repositories. It automatically handles repository setup by either cloning new
+ * repositories or opening existing local repositories, and keeps them synchronized with the remote.
  *
  * <p>Usage example:
  *
  * <pre>{@code
- * var coordinate = RepositoryCoordinates.create(repoName, repoName);
- * var repository = GitHubRepositoryBuilderFactory.create(coordinate)
- *     .withPersonalAccessToken("token")
+ * var coordinates = RepositoryCoordinates.create("owner", "repository");
+ * var repository = GitHubRepositoryBuilderFactory.create(coordinates)
+ *     .withPersonalAccessToken("ghp_xxxxxxxxxxxx")
+ *     .localCloneDirectory(Paths.get("/tmp/my-repo"))
  *     .build();
  *
  * repository.initialize();
- * var commitNavigator = repository.getCommitNavigator();
  *
- * while (commitNavigator.hasNext()) {
- *     var commit = commitNavigator.next();
- *     // Process commit
- * }
+ * // Access working directory
+ * Path workingDir = repository.getWorkingDirectory();
  *
+ * // Fetch latest changes
+ * repository.fetchLatestChanges();
+ *
+ * // Clean up resources
  * repository.close();
  * }</pre>
  *
@@ -74,10 +73,10 @@ public class GitHubRepositoryImpl implements GitHubRepository {
   private boolean initialized = false;
 
   /**
-   * Constructs a new GitHubRepoNavigatorImpl with the specified dependencies.
+   * Constructs a new GitHubRepositoryImpl with the specified dependencies.
    *
    * <p>This constructor uses dependency injection to provide the required services for repository
-   * operations, authentication, and file change detection.
+   * operations and authentication.
    *
    * @param config the repository configuration containing repository URL, authentication, and other
    *     parameters
@@ -91,7 +90,7 @@ public class GitHubRepositoryImpl implements GitHubRepository {
   }
 
   /**
-   * Initializes the repository navigator by cloning or opening the repository.
+   * Initializes the repository by cloning or opening the repository.
    *
    * <p>This method performs the following operations:
    *
@@ -100,7 +99,6 @@ public class GitHubRepositoryImpl implements GitHubRepository {
    *   <li>Sets up the local Git repository: a) clones the repository if it doesn't exist locally or
    *       b) opens existing local repository if already cloned
    *   <li>Fetches latest changes from the remote repository
-   *   <li>Creates a commit navigator instance for traversing repository commits
    * </ul>
    *
    * @throws GitHubNavigatorException if initialization fails due to authentication, network issues,
@@ -108,66 +106,43 @@ public class GitHubRepositoryImpl implements GitHubRepository {
    */
   @Override
   public void initialize() throws GitHubNavigatorException {
-    logger.info("Initializing GitHub repository navigator for: {}", config.getCloneUrl());
+    logger.info("Initializing GitHub repository for: {}", config.getCloneUrl());
 
     try {
       authenticateWithGitHub();
       setupRepository();
 
       initialized = true;
-      logger.info("Successfully initialized GitHub repository navigator");
+      logger.info("Successfully initialized GitHub repository");
 
-    } catch (GitHubNavigatorException e) {
+    } catch (RepositoryException e) {
       cleanup();
       throw e;
     }
   }
 
-  /**
-   * Retrieves the commit navigator for traversing repository commits.
-   *
-   * <p>The commit navigator provides methods to move through commits sequentially.
-   *
-   * @return a {@link CommitNavigator} instance for commit traversal
-   * @throws GitHubNavigatorException if the repository is not initialized or if there are issues
-   *     accessing commit history
-   */
   @Override
-  public CommitNavigator getCommitNavigator() throws GitHubNavigatorException {
+  public Path getWorkingDirectory() throws RepositoryException {
     ensureInitialized();
-    logger.debug("Creating commit navigator with default configuration");
-    var defaultConfig = CommitNavigatorConfig.getDefault();
-    return getCommitNavigator(defaultConfig);
-  }
-
-  /**
-   * Retrieves the commit navigator for traversing repository commits with custom configuration.
-   *
-   * @param navigatorConfig the configuration for commit navigation including file filters and
-   *     starting commit position
-   * @return a {@link CommitNavigator} instance for commit traversal
-   */
-  @Override
-  public CommitNavigator getCommitNavigator(CommitNavigatorConfig navigatorConfig)
-      throws GitHubNavigatorException {
-    ensureInitialized();
-    logger.debug("Creating commit navigator with custom configuration: {}", navigatorConfig);
-    var fileChangeDetector = new FileChangeDetectorImpl();
-    return new CommitNavigatorImpl(repository, navigatorConfig, fileChangeDetector);
+    return repository.getWorkTree().toPath();
   }
 
   /**
    * Fetches the latest changes from the remote repository.
    *
-   * <p>This method synchronizes the local repository with the remote by fetching new commits and
-   * updating local references. It also resets the commit navigator to reflect the latest state of
-   * the repository.
+   * <p>This method synchronizes the local repository with the remote by:
    *
-   * @throws GitHubNavigatorException if fetching fails due to authentication, network issues, or
+   * <ul>
+   *   <li>Fetching new commits from the remote branch
+   *   <li>Updating local references to match remote state
+   *   <li>Logging synchronization status and progress
+   * </ul>
+   *
+   * @throws RepositoryException if fetching fails due to authentication, network issues, or
    *     repository conflicts
    */
   @Override
-  public void fetchLatestChanges() throws GitHubNavigatorException {
+  public void fetchLatestChanges() throws RepositoryException {
     ensureInitialized();
 
     logger.debug("Fetching latest changes from remote repository");
@@ -183,31 +158,31 @@ public class GitHubRepositoryImpl implements GitHubRepository {
       logger.debug("Successfully fetched latest changes");
 
     } catch (GitAPIException | AuthenticationException e) {
-      throw new GitHubNavigatorException("Failed to fetch latest changes", e);
+      throw new RepositoryException("Failed to fetch latest changes", e);
     }
   }
 
   /**
-   * Closes the navigator and releases all resources.
+   * Closes the repository and releases all resources.
    *
    * <p>This method safely closes the Git repository, Git instance, and any other resources used by
-   * the navigator. It also resets the initialization state.
+   * the repository. It also resets the initialization state.
    *
-   * @throws GitHubNavigatorException if an error occurs during cleanup
+   * @throws RepositoryException if an error occurs during cleanup
    */
   @Override
-  public void close() throws GitHubNavigatorException {
-    logger.debug("Closing GitHub repository navigator");
+  public void close() throws RepositoryException {
+    logger.info("Closing GitHub repository navigator");
     cleanup();
   }
 
   /**
-   * Returns the configuration used by this navigator.
+   * Returns the configuration used by this repository.
    *
-   * <p>This method provides access to the navigator's configuration parameters including repository
-   * URL, authentication settings, and other navigation options.
+   * <p>This method provides access to the repository's configuration parameters including
+   * repository URL, authentication settings, and other repository options.
    *
-   * @return the {@link RepositoryConfig} used by this navigator
+   * @return the {@link RepositoryConfig} used by this repository
    */
   @Override
   public RepositoryConfig getConfig() {
@@ -241,24 +216,24 @@ public class GitHubRepositoryImpl implements GitHubRepository {
    * Sets up the local Git repository by either opening an existing repository or cloning a new one
    * from the remote URL.
    *
-   * @throws GitHubNavigatorException if repository setup fails
+   * @throws RepositoryException if repository setup fails
    */
-  private void setupRepository() throws GitHubNavigatorException {
+  private void setupRepository() throws RepositoryException {
     try {
       var localPath = getLocalRepositoryPath();
 
       if (repositoryExists(localPath)) {
-        logger.debug("Opening existing repository at: {}", localPath);
+        logger.info("Opening existing repository at: {}", localPath);
         openExistingRepository(localPath);
       } else {
-        logger.debug("Cloning repository to: {}", localPath);
+        logger.info("Cloning repository to: {}", localPath);
         cloneRepository(localPath);
       }
 
     } catch (IOException | GitAPIException e) {
-      throw new GitHubNavigatorException("Failed to setup repository", e);
+      throw new RepositoryException("Failed to setup repository", e);
     } catch (AuthenticationException e) {
-      throw new GitHubNavigatorException("Authentication failed during repository setup", e);
+      throw new RepositoryException("Authentication failed during repository setup", e);
     }
   }
 
@@ -269,11 +244,11 @@ public class GitHubRepositoryImpl implements GitHubRepository {
    * directory for the repository.
    *
    * @return the local repository path
-   * @throws GitHubNavigatorException if the path cannot be determined or created
+   * @throws RepositoryException if the path cannot be determined or created
    */
-  private Path getLocalRepositoryPath() throws GitHubNavigatorException {
-    if (config.getLocalCloneDirectory() != null) {
-      return config.getLocalCloneDirectory();
+  private Path getLocalRepositoryPath() throws RepositoryException {
+    if (config.getLocalWorkingDirectory() != null) {
+      return config.getLocalWorkingDirectory();
     }
 
     try {
@@ -281,7 +256,7 @@ public class GitHubRepositoryImpl implements GitHubRepository {
       var tempDir = Files.createTempDirectory("github-navigator-");
       return tempDir.resolve(repoName);
     } catch (IOException e) {
-      throw new GitHubNavigatorException("Failed to create temporary directory", e);
+      throw new RepositoryException("Failed to create temporary directory", e);
     }
   }
 
@@ -307,13 +282,7 @@ public class GitHubRepositoryImpl implements GitHubRepository {
   private void openExistingRepository(Path localPath)
       throws IOException, GitAPIException, AuthenticationException {
     var builder = new FileRepositoryBuilder();
-    repository =
-        builder
-            .setGitDir(localPath.resolve(".git").toFile())
-            .readEnvironment()
-            .findGitDir()
-            .build();
-
+    repository = builder.setGitDir(localPath.resolve(".git").toFile()).readEnvironment().build();
     git = new Git(repository);
     logger.debug("Opened existing repository");
 
@@ -332,7 +301,7 @@ public class GitHubRepositoryImpl implements GitHubRepository {
    */
   private void pullLatestChanges() throws GitAPIException, AuthenticationException {
     try {
-      logger.debug("Checking for remote changes...");
+      logger.info("Checking for remote changes...");
 
       // First fetch to get latest remote refs
       var fetchCommand = git.fetch();
@@ -372,7 +341,7 @@ public class GitHubRepositoryImpl implements GitHubRepository {
               pullResult.getMergeResult().getMergeStatus());
         }
       } else {
-        logger.debug("Repository is up to date with remote");
+        logger.info("Repository is up to date with remote");
       }
 
     } catch (IOException e) {
@@ -416,13 +385,13 @@ public class GitHubRepositoryImpl implements GitHubRepository {
   }
 
   /**
-   * Ensures that the navigator has been properly initialized before use.
+   * Ensures that the repository has been properly initialized before use.
    *
-   * @throws GitHubNavigatorException if the navigator is not initialized
+   * @throws RepositoryException if the repository is not initialized
    */
-  private void ensureInitialized() throws GitHubNavigatorException {
+  private void ensureInitialized() throws RepositoryException {
     if (!initialized) {
-      throw new GitHubNavigatorException("Navigator not initialized. Call initialize() first.");
+      throw new RepositoryException("Repository not initialized. Call initialize() first.");
     }
   }
 

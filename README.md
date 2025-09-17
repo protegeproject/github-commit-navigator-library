@@ -17,7 +17,7 @@ A modern Java library for navigating GitHub repository commits programmatically 
 <dependency>
     <groupId>edu.stanford.protege.commitnavigator</groupId>
     <artifactId>github-commit-navigator</artifactId>
-    <version>1.0.0</version>
+    <version>2.0.0</version>
 </dependency>
 ```
 
@@ -27,6 +27,7 @@ A modern Java library for navigating GitHub repository commits programmatically 
 import edu.stanford.protege.commitnavigator.GitHubRepository;
 import edu.stanford.protege.commitnavigator.GitHubRepositoryBuilderFactory;
 import edu.stanford.protege.commitnavigator.model.RepositoryCoordinates;
+import edu.stanford.protege.commitnavigator.CommitNavigatorBuilder;
 import edu.stanford.protege.commitnavigator.utils.CommitNavigator;
 import edu.stanford.protege.commitnavigator.model.CommitMetadata;
 
@@ -38,15 +39,18 @@ var repository = GitHubRepositoryBuilderFactory.create(coordinate)
     .withPersonalAccessToken("your-token-here")
     .build();
 
-// Initialize the navigator
+// Initialize the repository
 repository.initialize();
 
-// Get commit navigator
-var commitNavigator = repository.getCommitNavigator();
+// Get the local working directory
+var workingDirectory = repository.getWorkingDirectory();
+
+// Create commit navigator using builder
+var commitNavigator = CommitNavigatorBuilder.forWorkingDirectory(workingDirectory).build();
 
 // Navigate through commits
 while (commitNavigator.hasParent()) {
-    var commit = commitNavigator.fetchParent();
+    var commit = commitNavigator.checkoutParent();
     System.out.println("Commit: " + commit.getCommitHash());
     System.out.println("Author: " + commit.getCommitterUsername() + " (" + commit.getCommitterEmail() + ")");
     System.out.println("Date: " + commit.getCommitDate());
@@ -54,9 +58,10 @@ while (commitNavigator.hasParent()) {
     System.out.println("---");
 }
 
-// Navigate with checkout
+// Reset navigator and navigate again
+commitNavigator.reset();
 while (commitNavigator.hasParent()) {
-    var commit = commitNavigator.pullParent();
+    var commit = commitNavigator.checkoutParent();
     System.out.println("Checked out commit: " + commit.getCommitHash());
 }
 
@@ -73,18 +78,21 @@ var coordinate = RepositoryCoordinates.createFromUrl("https://github.com/example
 // Configure repository with advanced options
 var repository = GitHubRepositoryBuilderFactory.create(coordinate)
     .withPersonalAccessToken("your-token-here")
-    .localCloneDirectory("/path/to/local/repo")
+    .localWorkingDirectory("/path/to/local/directory")
     .shallowClone(true)
     .build();
 
+// Initialize repository
+repository.initialize();
+
+// Get the working directory path
+var workingDirectory = repository.getWorkingDirectory();
+
 // Configure navigator with file filtering and starting position
-var navigatorConfig = CommitNavigatorConfig.builder()
+var commitNavigator = CommitNavigatorBuilder.forWorkingDirectory(workingDirectory)
     .fileFilters("*.java", "*.md", "pom.xml") // Using convenient varargs syntax
     .startingCommit("abc123def")
     .build();
-
-// Get navigator with configuration
-var commitNavigator = repository.getCommitNavigator(navigatorConfig);
 ```
 
 ### Authentication
@@ -109,39 +117,36 @@ var repository = GitHubRepositoryBuilderFactory.create(coordinates)
 
 ### File Filtering
 
-Filter commits to only include those that modified specific files using CommitNavigatorConfig:
+Filter commits to only include those that modified specific files using CommitNavigatorBuilder:
 
 ```java
-// Configure file filters when creating navigator config using List
-var navigatorConfig = CommitNavigatorConfig.builder()
+// Configure file filters using List
+var commitNavigator = CommitNavigatorBuilder.forWorkingDirectory("/path/to/local/directory")
     .fileFilters(List.of("src/main/java/Main.java", "README.md")) // Exact file paths
     .build();
 
 // Or using convenient varargs syntax
-var navigatorConfig = CommitNavigatorConfig.builder()
+var commitNavigator = CommitNavigatorBuilder.forWorkingDirectory("/path/to/local/directory")
     .fileFilters("*.java", "**/*.md", "src/**/*.xml") // Glob patterns
     .build();
 
 // Or mixed patterns with varargs
-var navigatorConfig = CommitNavigatorConfig.builder()
+var commitNavigator = CommitNavigatorBuilder.forWorkingDirectory("/path/to/local/directory")
     .fileFilters("pom.xml", "*.java", "docs/**/*.md") // Mixed patterns
     .build();
-
-// Then pass to getCommitNavigator
-var commitNavigator = repository.getCommitNavigator(navigatorConfig);
 ```
 
 
 ## Navigation Methods
 
-- `fetchChild()` - Move to child commit (newer, returns `CommitMetadata`)
-- `fetchParent()` - Move to parent commit (older, returns `CommitMetadata`)
+- `checkoutChild()` - Move to child commit (newer) and checkout working directory (returns `CommitMetadata`)
+- `checkoutParent()` - Move to parent commit (older) and checkout working directory (returns `CommitMetadata`)
 - `hasChild()` - Check if child commit exists
 - `hasParent()` - Check if parent commit exists
 - `getCurrentCommit()` - Get current commit metadata
+- `getCommitCount()` - Get total number of commits in navigation sequence
+- `resolveFilePath(String relativePath)` - Get absolute path for a repository-relative file path
 - `reset()` - Reset navigator to initial state
-- `pullChild()` - Move to child commit and checkout working directory
-- `pullParent()` - Move to parent commit and checkout working directory
 
 
 ## Command Line Interface
@@ -150,10 +155,10 @@ The library includes a CLI for quick repository analysis:
 
 ```bash
 # Basic usage
-java -jar github-commit-navigator-1.0.0.jar https://github.com/user/repo
+java -jar github-commit-navigator-2.0.0.jar https://github.com/user/repo
 
 # With authentication and filters
-java -jar github-commit-navigator-1.0.0.jar \
+java -jar github-commit-navigator-2.0.0.jar \
     --token your-token \
     --file-filter "*.java,*.md" \
     --branch develop \

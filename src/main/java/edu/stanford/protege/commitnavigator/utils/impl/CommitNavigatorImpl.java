@@ -1,81 +1,82 @@
 package edu.stanford.protege.commitnavigator.utils.impl;
 
-import edu.stanford.protege.commitnavigator.config.CommitNavigatorConfig;
 import edu.stanford.protege.commitnavigator.exceptions.RepositoryException;
 import edu.stanford.protege.commitnavigator.model.CommitMetadata;
 import edu.stanford.protege.commitnavigator.utils.CommitNavigator;
-import edu.stanford.protege.commitnavigator.utils.FileChangeDetector;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import javax.inject.Inject;
+import javax.annotation.Nonnull;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
-import org.eclipse.jgit.revwalk.RevWalk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Default implementation of {@link CommitNavigator} that provides sequential navigation through Git
- * repository commits with optional file filtering.
+ * Default implementation of {@link CommitNavigator} that provides sequential navigation through a
+ * list of Git repository commits in chronological order (HEAD first, oldest last).
  *
- * <p>This implementation maintains a filtered list of commits based on the configured file filters
- * and provides bidirectional navigation through the commit history. It supports both navigation
- * with and without working directory checkout operations.
+ * <p>This implementation operates on a provided list of commits and provides bidirectional
+ * navigation through the commit history. All navigation operations include working directory
+ * checkout of a target commit.
  *
  * <p>Key features:
  *
  * <ul>
- *   <li>Lazy initialization of commit list on first access
- *   <li>File-based filtering of commits using glob patterns
- *   <li>Bidirectional navigation (child/parent)
- *   <li>Optional checkout operations during navigation
+ *   <li>Bidirectional navigation (child/parent) through commit history
+ *   <li>Checkout operations during navigation
  *   <li>Configurable starting commit position
+ *   <li>Path resolution utilities for repository files
+ *   <li>Reset functionality to return to initial state
  * </ul>
  *
- * <p>The navigator maintains an internal index to track the current position in the filtered commit
- * list, allowing for efficient navigation operations.
+ * <p>The navigator maintains an internal index to track the current position in the commit list,
+ * allowing for efficient navigation operations. The commit list is expected to be in chronological
+ * order with HEAD first and oldest commit last.
  *
  * @since 1.0.0
  */
 public class CommitNavigatorImpl implements CommitNavigator {
   private static final Logger logger = LoggerFactory.getLogger(CommitNavigatorImpl.class);
 
-  private final Repository repository;
-  private final CommitNavigatorConfig navigatorConfig;
-  private final FileChangeDetector fileChangeDetector;
+  /** The Git repository instance used for operations. */
+  private final Git git;
 
-  private List<RevCommit> filteredCommits;
+  /** The list of commits in chronological order (HEAD first, oldest last). */
+  private final List<RevCommit> projectHistory;
+
+  /** The initial index position in the commit history. */
+  private final int startingIndex;
+
+  /** The current index position in the commit history. */
   private int currentIndex;
-  private boolean initialized = false;
 
   /**
-   * Constructs a new CommitNavigatorImpl with the specified dependencies.
+   * Creates a new CommitNavigatorImpl starting from the HEAD commit (index 0).
    *
-   * <p>The navigator is initialized with a current index of -1, indicating no current commit. The
-   * actual commit list is built lazily on first access to improve performance.
-   *
-   * @param repository the Git repository to navigate
-   * @param navigatorConfig the navigation configuration containing file filters and starting commit
-   * @param fileChangeDetector the service for detecting file changes in commits
-   * @throws NullPointerException if any parameter is null
+   * @param git the Git repository instance, cannot be null
+   * @param projectHistory the list of commits in chronological order (HEAD first), cannot be null
    */
-  @Inject
+  public CommitNavigatorImpl(@Nonnull Git git, @Nonnull List<RevCommit> projectHistory) {
+    this(git, projectHistory, 0); // Starts from the HEAD by default
+  }
+
+  /**
+   * Creates a new CommitNavigatorImpl with a specific starting position.
+   *
+   * @param git the Git repository instance, cannot be null
+   * @param projectHistory the list of commits in chronological order (HEAD first), cannot be null
+   * @param startingIndex the initial position in the commit history (0 = HEAD)
+   * @throws NullPointerException if git or projectHistory is null
+   */
   public CommitNavigatorImpl(
-      Repository repository,
-      CommitNavigatorConfig navigatorConfig,
-      FileChangeDetector fileChangeDetector) {
-    this.repository = Objects.requireNonNull(repository, "Repository cannot be null");
-    this.navigatorConfig =
-        Objects.requireNonNull(navigatorConfig, "NavigatorConfig cannot be null");
-    this.fileChangeDetector =
-        Objects.requireNonNull(fileChangeDetector, "FileChangeDetector cannot be null");
-    this.currentIndex = -1;
+      @Nonnull Git git, @Nonnull List<RevCommit> projectHistory, int startingIndex) {
+    this.git = Objects.requireNonNull(git, "git cannot be null");
+    this.projectHistory = Objects.requireNonNull(projectHistory, "projectHistory cannot be null");
+    this.startingIndex = startingIndex;
+    this.currentIndex = startingIndex;
   }
 
   /**
@@ -91,11 +92,10 @@ public class CommitNavigatorImpl implements CommitNavigator {
    */
   @Override
   public CommitMetadata checkoutChild() throws RepositoryException {
-    ensureInitialized();
     try {
       // Move to the previous commit index and get the commit object
       currentIndex--;
-      var commit = filteredCommits.get(currentIndex);
+      var commit = projectHistory.get(currentIndex);
       logger.debug("Navigated to child commit: {}", commit.getName());
 
       // Checkout that commit
@@ -104,7 +104,7 @@ public class CommitNavigatorImpl implements CommitNavigator {
       return createCommitMetadata(commit);
     } catch (IndexOutOfBoundsException e) {
       throw new RepositoryException(
-          "Traversal stopped: reached HEAD no further child commits available", e);
+          "Traversal stopped: reached HEAD, no further child commits available", e);
     }
   }
 
@@ -121,11 +121,10 @@ public class CommitNavigatorImpl implements CommitNavigator {
    */
   @Override
   public CommitMetadata checkoutParent() throws RepositoryException {
-    ensureInitialized();
     try {
       // Move to the next commit index and get the commit object
       currentIndex++;
-      var commit = filteredCommits.get(currentIndex);
+      var commit = projectHistory.get(currentIndex);
       logger.debug("Navigated to parent commit: {}", commit.getName());
 
       // Checkout that commit
@@ -134,7 +133,7 @@ public class CommitNavigatorImpl implements CommitNavigator {
       return createCommitMetadata(commit);
     } catch (IndexOutOfBoundsException e) {
       throw new RepositoryException(
-          "Traversal stopped: reached HEAD no further child commits available", e);
+          "Traversal stopped: reached initial commit, no further parent commits available", e);
     }
   }
 
@@ -149,7 +148,6 @@ public class CommitNavigatorImpl implements CommitNavigator {
    */
   @Override
   public boolean hasChild() throws RepositoryException {
-    ensureInitialized();
     return currentIndex > 0;
   }
 
@@ -164,8 +162,7 @@ public class CommitNavigatorImpl implements CommitNavigator {
    */
   @Override
   public boolean hasParent() throws RepositoryException {
-    ensureInitialized();
-    return currentIndex < filteredCommits.size() - 1;
+    return currentIndex < projectHistory.size() - 1;
   }
 
   /**
@@ -176,8 +173,7 @@ public class CommitNavigatorImpl implements CommitNavigator {
    */
   @Override
   public long getCommitCount() throws RepositoryException {
-    ensureInitialized();
-    return filteredCommits.size();
+    return projectHistory.size();
   }
 
   /**
@@ -191,10 +187,8 @@ public class CommitNavigatorImpl implements CommitNavigator {
    */
   @Override
   public CommitMetadata getCurrentCommit() throws RepositoryException {
-    ensureInitialized();
-
-    if (currentIndex >= 0 && currentIndex < filteredCommits.size()) {
-      return createCommitMetadata(filteredCommits.get(currentIndex));
+    if (currentIndex >= 0 && currentIndex < projectHistory.size()) {
+      return createCommitMetadata(projectHistory.get(currentIndex));
     }
     return null;
   }
@@ -213,119 +207,46 @@ public class CommitNavigatorImpl implements CommitNavigator {
   @Override
   public Path resolveFilePath(String relativePath) {
     Objects.requireNonNull(relativePath, "Relative path cannot be null");
-    var localDirectory = repository.getWorkTree().toPath();
+    var localDirectory = git.getRepository().getWorkTree().toPath();
     return localDirectory.resolve(Paths.get(relativePath));
   }
 
   /**
    * Resets the navigator to its initial state.
    *
-   * <p>This method clears the filtered commit list, resets the current index to -1, and marks the
-   * navigator as uninitialized. The next navigation operation will trigger re-initialization and
-   * rebuild the filtered commit list.
+   * <p>This method resets the current index to the starting index position, effectively returning
+   * the navigator to its initial state when it was created.
    *
    * @throws RepositoryException if an error occurs during the reset operation
    */
   @Override
   public void reset() throws RepositoryException {
     logger.debug("Resetting commit navigator");
-    initialized = false;
-    filteredCommits = null;
-    currentIndex = -1;
+    currentIndex = startingIndex;
   }
 
-  private void ensureInitialized() throws RepositoryException {
-    if (!initialized) {
-      initialize();
-    }
-  }
-
-  private void initialize() throws RepositoryException {
-    logger.debug("Initializing commit navigator");
-
-    try {
-      filteredCommits = buildFilteredCommitList();
-
-      if (navigatorConfig.getStartingCommit().isPresent()) {
-        var startingCommit = navigatorConfig.getStartingCommit().get();
-        currentIndex = findCommitIndex(startingCommit);
-        if (currentIndex == -1) {
-          logger.warn(
-              "No commit found for starting commit {} that includes the file in the filter",
-              startingCommit);
-          logger.warn("Starting at the latest commit instead.");
-          currentIndex = 0;
-        }
-      } else {
-        currentIndex = 0;
-      }
-
-      initialized = true;
-      logger.debug(
-          "Navigator initialized with {} filtered commits, starting at index {}",
-          filteredCommits.size(),
-          currentIndex);
-
-    } catch (Exception e) {
-      throw new RepositoryException("Failed to initialize commit navigator", e);
-    }
-  }
-
-  private List<RevCommit> buildFilteredCommitList() throws RepositoryException {
-    logger.debug("Building filtered commit list");
-
-    try (RevWalk revWalk = new RevWalk(repository)) {
-      revWalk.markStart(revWalk.parseCommit(repository.resolve("HEAD")));
-
-      var commits = new ArrayList<RevCommit>();
-
-      for (RevCommit commit : revWalk) {
-        if (shouldIncludeCommit(commit)) {
-          commits.add(commit);
-        }
-      }
-      return commits;
-
-    } catch (IOException e) {
-      throw new RepositoryException("Failed to build commit list", e);
-    }
-  }
-
-  private boolean shouldIncludeCommit(RevCommit commit) throws RepositoryException {
-    var fileFilters = navigatorConfig.getFileFilters();
-
-    if (fileFilters.isEmpty()) {
-      return true;
-    }
-
-    return fileChangeDetector.hasFileChanges(repository, commit, fileFilters.get());
-  }
-
-  private int findCommitIndex(String commitHash) {
-    for (int i = 0; i < filteredCommits.size(); i++) {
-      if (filteredCommits.get(i).getName().equals(commitHash)) {
-        return i;
-      }
-    }
-    return -1;
-  }
-
+  /**
+   * Checks out the specified commit in the working directory.
+   *
+   * @param commitHash the hash of the commit to check out
+   * @throws RepositoryException if the checkout operation fails
+   */
   private void checkout(String commitHash) throws RepositoryException {
     logger.debug("Checking out commit: {}", commitHash);
 
     try {
-      var git = new Git(repository);
-      var checkout = git.checkout();
-      checkout.setName(commitHash);
-      checkout.call();
-
-      logger.debug("Successfully checked out commit: {}", commitHash);
-
+      git.checkout().setName(commitHash).call();
     } catch (GitAPIException e) {
       throw new RepositoryException("Failed to checkout commit: " + commitHash, e);
     }
   }
 
+  /**
+   * Creates a CommitMetadata object from a RevCommit.
+   *
+   * @param commit the RevCommit to extract metadata from
+   * @return a CommitMetadata object containing the commit information
+   */
   private CommitMetadata createCommitMetadata(RevCommit commit) {
     var commitHash = commit.getName();
     var committerUsername = commit.getCommitterIdent().getName();

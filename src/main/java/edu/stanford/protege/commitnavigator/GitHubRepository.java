@@ -1,24 +1,23 @@
 package edu.stanford.protege.commitnavigator;
 
-import edu.stanford.protege.commitnavigator.config.CommitNavigatorConfig;
 import edu.stanford.protege.commitnavigator.config.RepositoryConfig;
 import edu.stanford.protege.commitnavigator.exceptions.GitHubNavigatorException;
-import edu.stanford.protege.commitnavigator.utils.CommitNavigator;
+import edu.stanford.protege.commitnavigator.exceptions.RepositoryException;
+import java.nio.file.Path;
 
 /**
- * Primary interface for navigating GitHub repository commits with file filtering and authentication
- * support.
+ * Primary interface for managing GitHub repository access with authentication support.
  *
- * <p>This interface provides methods to initialize repository access, navigate through commits, and
- * manage repository synchronization. The navigator supports various authentication methods and can
- * filter commits based on file changes.
+ * <p>This interface provides methods to initialize repository access, manage repository
+ * synchronization, and access the working directory. The repository supports various authentication
+ * methods including personal access tokens and SSH keys for both public and private repositories.
  *
  * @since 1.0.0
  */
 public interface GitHubRepository {
 
   /**
-   * Initializes the repository navigator by cloning or opening the repository.
+   * Initializes the repository by cloning or opening the repository.
    *
    * @throws GitHubNavigatorException if initialization fails due to authentication, network issues,
    *     or repository access problems
@@ -26,29 +25,13 @@ public interface GitHubRepository {
   void initialize() throws GitHubNavigatorException;
 
   /**
-   * Retrieves the commit navigator for traversing repository commits.
+   * Returns the working directory path of the initialized repository.
    *
-   * <p>The commit navigator provides methods to move through commits sequentially.
-   *
-   * @return a {@link CommitNavigator} instance for commit traversal
-   * @throws GitHubNavigatorException if the repository is not initialized or if there are issues
-   *     accessing commit history
+   * @return the {@link Path} to the repository's working directory
+   * @throws RepositoryException if the repository is not initialized or if there are issues
+   *     accessing the working directory
    */
-  CommitNavigator getCommitNavigator() throws GitHubNavigatorException;
-
-  /**
-   * Retrieves the commit navigator for traversing repository commits with custom configuration.
-   *
-   * <p>The commit navigator provides methods to move through commits sequentially, with optional
-   * file filtering and starting commit position based on the provided configuration.
-   *
-   * @param navigatorConfig the configuration to customize the commit navigation
-   * @return a {@link CommitNavigator} instance for commit traversal
-   * @throws GitHubNavigatorException if the repository is not initialized or if there are issues
-   *     accessing commit history
-   */
-  CommitNavigator getCommitNavigator(CommitNavigatorConfig navigatorConfig)
-      throws GitHubNavigatorException;
+  Path getWorkingDirectory() throws RepositoryException;
 
   /**
    * Fetches the latest changes from the remote repository.
@@ -61,23 +44,23 @@ public interface GitHubRepository {
    *   <li>Logging synchronization status and progress
    * </ul>
    *
-   * @throws GitHubNavigatorException if fetching fails due to authentication, network issues, or
+   * @throws RepositoryException if fetching fails due to authentication, network issues, or
    *     repository conflicts
    */
-  void fetchLatestChanges() throws GitHubNavigatorException;
+  void fetchLatestChanges() throws RepositoryException;
 
   /**
-   * Closes the repository navigator and releases associated resources.
+   * Closes the repository and releases associated resources.
    *
-   * <p>This method should be called when the navigator is no longer needed to ensure proper cleanup
-   * of file handles, network connections, and temporary files.
+   * <p>This method should be called when the repository is no longer needed to ensure proper
+   * cleanup of file handles, network connections, and temporary files.
    *
-   * @throws GitHubNavigatorException if cleanup operations fail
+   * @throws RepositoryException if cleanup operations fail
    */
-  void close() throws GitHubNavigatorException;
+  void close() throws RepositoryException;
 
   /**
-   * Retrieves the configuration used to create this navigator.
+   * Retrieves the configuration used to create this repository.
    *
    * @return the {@link RepositoryConfig} instance containing repository URL, authentication
    *     settings, and other repository-level configuration options
