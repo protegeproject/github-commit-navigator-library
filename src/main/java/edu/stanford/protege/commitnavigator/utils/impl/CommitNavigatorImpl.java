@@ -1,5 +1,6 @@
 package edu.stanford.protege.commitnavigator.utils.impl;
 
+import com.google.common.collect.Lists;
 import edu.stanford.protege.commitnavigator.exceptions.RepositoryException;
 import edu.stanford.protege.commitnavigator.model.CommitMetadata;
 import edu.stanford.protege.commitnavigator.utils.CommitNavigator;
@@ -253,8 +254,9 @@ public class CommitNavigatorImpl implements CommitNavigator {
     var committerEmail = commit.getCommitterIdent().getEmailAddress();
     var commitDate = commit.getCommitterIdent().getWhen().toInstant();
     var commitMessage = commit.getFullMessage();
+    var changedFiles = Lists.<String>newArrayList();
 
     return CommitMetadata.create(
-        commitHash, committerUsername, committerEmail, commitDate, commitMessage);
+        commitHash, committerUsername, committerEmail, commitDate, commitMessage, changedFiles);
   }
 }

@@ -3,9 +3,13 @@ package edu.stanford.protege.commitnavigator.model;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableList;
+
+import javax.annotation.Nonnull;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -45,7 +49,8 @@ public record CommitMetadata(
     @JsonProperty("committerUsername") String committerUsername,
     @JsonProperty("committerEmail") String committerEmail,
     @JsonProperty("commitDate") @JsonFormat(shape = JsonFormat.Shape.STRING) Instant commitDate,
-    @JsonProperty("commitMessage") String commitMessage) {
+    @JsonProperty("commitMessage") String commitMessage,
+    @JsonProperty("changedFiles") List<String> changedFiles) {
 
   public CommitMetadata {
     Objects.requireNonNull(commitHash, "Commit hash cannot be null");
@@ -53,6 +58,7 @@ public record CommitMetadata(
     Objects.requireNonNull(committerEmail, "Committer email cannot be null");
     Objects.requireNonNull(commitDate, "Commit date cannot be null");
     Objects.requireNonNull(commitMessage, "Commit message cannot be null");
+    Objects.requireNonNull(changedFiles, "Changed files cannot be null");
   }
 
   /**
@@ -70,13 +76,14 @@ public record CommitMetadata(
    * @throws NullPointerException if any parameter is null
    */
   public static CommitMetadata create(
-      String commitHash,
-      String committerUsername,
-      String committerEmail,
-      Instant commitDate,
-      String commitMessage) {
+      @Nonnull String commitHash,
+      @Nonnull String committerUsername,
+      @Nonnull String committerEmail,
+      @Nonnull Instant commitDate,
+      @Nonnull String commitMessage,
+      @Nonnull List<String> changedFiles) {
     return new CommitMetadata(
-        commitHash, committerUsername, committerEmail, commitDate, commitMessage);
+        commitHash, committerUsername, committerEmail, commitDate, commitMessage, changedFiles);
   }
 
   /**
@@ -126,6 +133,15 @@ public record CommitMetadata(
    */
   public String getCommitMessage() {
     return commitMessage;
+  }
+
+  /**
+   * Returns the changed files in the commit
+   *
+   * @return the list of changed files
+   */
+  public List<String> getChangedFiles() {
+    return ImmutableList.copyOf(changedFiles);
   }
 
   /**
