@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +24,8 @@ class CommitMetadataTest {
             "testuser",
             "testuser@example.com",
             Instant.parse("2023-01-01T12:00:00Z"),
-            "Test commit message");
+            "Test commit message",
+            List.of("file1.java", "file2.md"));
 
     var json = mapper.writeValueAsString(original);
     logger.debug("JSON: {}", json);
@@ -34,6 +36,7 @@ class CommitMetadataTest {
     assertEquals(original.getCommitterUsername(), deserialized.getCommitterUsername());
     assertEquals(original.getCommitDate(), deserialized.getCommitDate());
     assertEquals(original.getCommitMessage(), deserialized.getCommitMessage());
+    assertEquals(original.getChangedFiles(), deserialized.getChangedFiles());
   }
 
   @Test
@@ -44,7 +47,8 @@ class CommitMetadataTest {
             "testuser",
             "testuser@example.com",
             Instant.parse("2023-01-01T12:00:00Z"),
-            "Test commit message");
+            "Test commit message",
+            List.of("file1.java", "file2.md"));
 
     var commit2 =
         CommitMetadata.create(
@@ -52,7 +56,8 @@ class CommitMetadataTest {
             "testuser",
             "testuser@example.com",
             Instant.parse("2023-01-01T12:00:00Z"),
-            "Test commit message");
+            "Test commit message",
+            List.of("file1.java", "file2.md"));
 
     assertEquals(commit1, commit2);
     assertEquals(commit1.hashCode(), commit2.hashCode());

@@ -4,13 +4,12 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
-
-import javax.annotation.Nonnull;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Objects;
+import javax.annotation.Nonnull;
 
 /**
  * Immutable record representing metadata for a Git commit.
@@ -59,6 +58,8 @@ public record CommitMetadata(
     Objects.requireNonNull(commitDate, "Commit date cannot be null");
     Objects.requireNonNull(commitMessage, "Commit message cannot be null");
     Objects.requireNonNull(changedFiles, "Changed files cannot be null");
+    // Create defensive copy to prevent external modification
+    changedFiles = ImmutableList.copyOf(changedFiles);
   }
 
   /**
@@ -72,6 +73,7 @@ public record CommitMetadata(
    * @param committerEmail the email of the person who committed the changes
    * @param commitDate the exact moment when the commit was made (timezone-independent)
    * @param commitMessage the commit message describing the changes
+   * @param changedFiles the list of files modified in the commit
    * @return a new {@link CommitMetadata} instance
    * @throws NullPointerException if any parameter is null
    */
@@ -138,10 +140,10 @@ public record CommitMetadata(
   /**
    * Returns the changed files in the commit
    *
-   * @return the list of changed files
+   * @return the immutable list of changed files
    */
   public List<String> getChangedFiles() {
-    return ImmutableList.copyOf(changedFiles);
+    return changedFiles;
   }
 
   /**

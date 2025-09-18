@@ -1,11 +1,11 @@
 package edu.stanford.protege.commitnavigator;
 
 import edu.stanford.protege.commitnavigator.exceptions.RepositoryException;
+import edu.stanford.protege.commitnavigator.model.CommitMetadata;
 import edu.stanford.protege.commitnavigator.utils.CommitNavigator;
 import edu.stanford.protege.commitnavigator.utils.FileChangeAnalyzer;
 import edu.stanford.protege.commitnavigator.utils.impl.CommitNavigatorImpl;
 import edu.stanford.protege.commitnavigator.utils.impl.FileChangeAnalyzerImpl;
-
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -191,9 +191,10 @@ public class CommitNavigatorBuilder {
       // Open the Git repository
       var repository = openRepository();
       var git = new Git(repository);
+      var fileChangeAnalyzer = new FileChangeAnalyzerImpl();
 
       // Collect all commits
-      var filteredCommits = collectFilteredCommits(repository);
+      var filteredCommits = collectFilteredCommits(repository, fileChangeAnalyzer);
       logger.info("Collected {} total commits", filteredCommits.size());
 
       // Find starting index
@@ -232,23 +233,23 @@ public class CommitNavigatorBuilder {
    * Collects all commits from the repository in chronological order (HEAD first, oldest last).
    *
    * @param repository the Git repository to collect commits from
+   * @param analyzer the utility class to extract and analyze file changes in the commit
    * @return a list of all commits in chronological order
    * @throws IOException if commit collection fails
    * @throws RepositoryException if the repository has no commits
    */
-  private List<RevCommit> collectFilteredCommits(Repository repository)
-      throws IOException, RepositoryException {
+  private List<CommitMetadata> collectFilteredCommits(
+      Repository repository, FileChangeAnalyzer analyzer) throws IOException, RepositoryException {
     logger.debug("Collecting relevant commits from repository");
-
-    var fileChangeAnalyzer = new FileChangeAnalyzerImpl();
 
     try (var revWalk = new RevWalk(repository)) {
       revWalk.markStart(revWalk.parseCommit(repository.resolve("HEAD")));
 
-      var commits = new ArrayList<RevCommit>();
+      var commits = new ArrayList<CommitMetadata>();
       for (RevCommit commit : revWalk) {
-        if (shouldIncludeCommit(repository, commit, fileChangeAnalyzer)) {
-          commits.add(commit);
+        if (shouldIncludeCommit(repository, commit, analyzer)) {
+          var commitMetadata = createCommitMetadata(repository, commit, analyzer);
+          commits.add(commitMetadata);
         }
       }
       return commits;
@@ -268,13 +269,33 @@ public class CommitNavigatorBuilder {
   }
 
   /**
+   * Creates a CommitMetadata object from a RevCommit.
+   *
+   * @param commit the RevCommit to extract metadata from
+   * @return a CommitMetadata object containing the commit information
+   */
+  private CommitMetadata createCommitMetadata(
+      Repository repository, RevCommit commit, FileChangeAnalyzer fileChangeAnalyzer)
+      throws RepositoryException {
+    var commitHash = commit.getName();
+    var committerUsername = commit.getCommitterIdent().getName();
+    var committerEmail = commit.getCommitterIdent().getEmailAddress();
+    var commitDate = commit.getCommitterIdent().getWhen().toInstant();
+    var commitMessage = commit.getFullMessage();
+    var changedFiles = fileChangeAnalyzer.getChangedFiles(repository, commit);
+
+    return CommitMetadata.create(
+        commitHash, committerUsername, committerEmail, commitDate, commitMessage, changedFiles);
+  }
+
+  /**
    * Finds the starting index in the filtered commit list.
    *
    * @param filteredCommits the filtered list of commits
    * @return the starting index, or 0 if no starting commit is specified
    * @throws RepositoryException if the starting commit is specified but not found
    */
-  private int findStartingIndex(List<RevCommit> filteredCommits) throws RepositoryException {
+  private int findStartingIndex(List<CommitMetadata> filteredCommits) throws RepositoryException {
     if (startingCommit == null) {
       logger.debug("No starting commit hash specified, using HEAD (index 0)");
       return 0;
@@ -283,7 +304,7 @@ public class CommitNavigatorBuilder {
     logger.debug("Looking for starting commit hash: {}", startingCommit);
 
     for (int i = 0; i < filteredCommits.size(); i++) {
-      if (filteredCommits.get(i).getName().equals(startingCommit)) {
+      if (filteredCommits.get(i).getCommitHash().equals(startingCommit)) {
         logger.debug("Found starting commit hash at index: {}", i);
         return i;
       }

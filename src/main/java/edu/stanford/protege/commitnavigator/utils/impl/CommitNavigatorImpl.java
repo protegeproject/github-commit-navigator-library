@@ -1,6 +1,5 @@
 package edu.stanford.protege.commitnavigator.utils.impl;
 
-import com.google.common.collect.Lists;
 import edu.stanford.protege.commitnavigator.exceptions.RepositoryException;
 import edu.stanford.protege.commitnavigator.model.CommitMetadata;
 import edu.stanford.protege.commitnavigator.utils.CommitNavigator;
@@ -11,7 +10,6 @@ import java.util.Objects;
 import javax.annotation.Nonnull;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.revwalk.RevCommit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +44,7 @@ public class CommitNavigatorImpl implements CommitNavigator {
   private final Git git;
 
   /** The list of commits in chronological order (HEAD first, oldest last). */
-  private final List<RevCommit> projectHistory;
+  private final List<CommitMetadata> commitList;
 
   /** The initial index position in the commit history. */
   private final int startingIndex;
@@ -58,24 +56,24 @@ public class CommitNavigatorImpl implements CommitNavigator {
    * Creates a new CommitNavigatorImpl starting from the HEAD commit (index 0).
    *
    * @param git the Git repository instance, cannot be null
-   * @param projectHistory the list of commits in chronological order (HEAD first), cannot be null
+   * @param commitList the list of commits in chronological order (HEAD first), cannot be null
    */
-  public CommitNavigatorImpl(@Nonnull Git git, @Nonnull List<RevCommit> projectHistory) {
-    this(git, projectHistory, 0); // Starts from the HEAD by default
+  public CommitNavigatorImpl(@Nonnull Git git, @Nonnull List<CommitMetadata> commitList) {
+    this(git, commitList, 0); // Starts from the HEAD by default
   }
 
   /**
    * Creates a new CommitNavigatorImpl with a specific starting position.
    *
    * @param git the Git repository instance, cannot be null
-   * @param projectHistory the list of commits in chronological order (HEAD first), cannot be null
+   * @param commitList the list of commits in chronological order (HEAD first), cannot be null
    * @param startingIndex the initial position in the commit history (0 = HEAD)
    * @throws NullPointerException if git or projectHistory is null
    */
   public CommitNavigatorImpl(
-      @Nonnull Git git, @Nonnull List<RevCommit> projectHistory, int startingIndex) {
-    this.git = Objects.requireNonNull(git, "git cannot be null");
-    this.projectHistory = Objects.requireNonNull(projectHistory, "projectHistory cannot be null");
+      @Nonnull Git git, @Nonnull List<CommitMetadata> commitList, int startingIndex) {
+    this.git = Objects.requireNonNull(git, "Git cannot be null");
+    this.commitList = Objects.requireNonNull(commitList, "Commit list cannot be null");
     this.startingIndex = startingIndex;
     this.currentIndex = startingIndex;
   }
@@ -96,13 +94,13 @@ public class CommitNavigatorImpl implements CommitNavigator {
     try {
       // Move to the previous commit index and get the commit object
       currentIndex--;
-      var commit = projectHistory.get(currentIndex);
-      logger.debug("Navigated to child commit: {}", commit.getName());
+      var commit = commitList.get(currentIndex);
+      logger.debug("Navigated to child commit: {}", commit.getCommitHash());
 
       // Checkout that commit
-      checkout(commit.getName());
+      checkout(commit.getCommitHash());
 
-      return createCommitMetadata(commit);
+      return commit;
     } catch (IndexOutOfBoundsException e) {
       throw new RepositoryException(
           "Traversal stopped: reached HEAD, no further child commits available", e);
@@ -125,13 +123,13 @@ public class CommitNavigatorImpl implements CommitNavigator {
     try {
       // Move to the next commit index and get the commit object
       currentIndex++;
-      var commit = projectHistory.get(currentIndex);
-      logger.debug("Navigated to parent commit: {}", commit.getName());
+      var commit = commitList.get(currentIndex);
+      logger.debug("Navigated to parent commit: {}", commit.getCommitHash());
 
       // Checkout that commit
-      checkout(commit.getName());
+      checkout(commit.getCommitHash());
 
-      return createCommitMetadata(commit);
+      return commit;
     } catch (IndexOutOfBoundsException e) {
       throw new RepositoryException(
           "Traversal stopped: reached initial commit, no further parent commits available", e);
@@ -163,7 +161,7 @@ public class CommitNavigatorImpl implements CommitNavigator {
    */
   @Override
   public boolean hasParent() throws RepositoryException {
-    return currentIndex < projectHistory.size() - 1;
+    return currentIndex < commitList.size() - 1;
   }
 
   /**
@@ -174,7 +172,7 @@ public class CommitNavigatorImpl implements CommitNavigator {
    */
   @Override
   public long getCommitCount() throws RepositoryException {
-    return projectHistory.size();
+    return commitList.size();
   }
 
   /**
@@ -188,8 +186,8 @@ public class CommitNavigatorImpl implements CommitNavigator {
    */
   @Override
   public CommitMetadata getCurrentCommit() throws RepositoryException {
-    if (currentIndex >= 0 && currentIndex < projectHistory.size()) {
-      return createCommitMetadata(projectHistory.get(currentIndex));
+    if (currentIndex >= 0 && currentIndex < commitList.size()) {
+      return commitList.get(currentIndex);
     }
     return null;
   }
@@ -240,23 +238,5 @@ public class CommitNavigatorImpl implements CommitNavigator {
     } catch (GitAPIException e) {
       throw new RepositoryException("Failed to checkout commit: " + commitHash, e);
     }
-  }
-
-  /**
-   * Creates a CommitMetadata object from a RevCommit.
-   *
-   * @param commit the RevCommit to extract metadata from
-   * @return a CommitMetadata object containing the commit information
-   */
-  private CommitMetadata createCommitMetadata(RevCommit commit) {
-    var commitHash = commit.getName();
-    var committerUsername = commit.getCommitterIdent().getName();
-    var committerEmail = commit.getCommitterIdent().getEmailAddress();
-    var commitDate = commit.getCommitterIdent().getWhen().toInstant();
-    var commitMessage = commit.getFullMessage();
-    var changedFiles = Lists.<String>newArrayList();
-
-    return CommitMetadata.create(
-        commitHash, committerUsername, committerEmail, commitDate, commitMessage, changedFiles);
   }
 }

@@ -2,7 +2,6 @@ package edu.stanford.protege.commitnavigator.utils.impl;
 
 import edu.stanford.protege.commitnavigator.exceptions.RepositoryException;
 import edu.stanford.protege.commitnavigator.utils.FileChangeAnalyzer;
-
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.util.ArrayList;
