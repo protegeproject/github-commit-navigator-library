@@ -11,6 +11,31 @@
 
     <name>GitHub Commit Navigator Library</name>
     <description>A library for navigating GitHub repository commits programmatically</description>
+    <url>https://github.com/protegeproject/github-commit-navigator-library</url>
+
+    <licenses>
+        <license>
+            <name>BSD 2-Clause License</name>
+            <url>https://opensource.org/licenses/BSD-2-Clause</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>johardi</id>
+            <name>Josef Hardi</name>
+            <email>johardi@stanford.edu</email>
+            <organization>Stanford University</organization>
+            <organizationUrl>https://protege.stanford.edu</organizationUrl>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/protegeproject/github-commit-navigator-library.git</connection>
+        <developerConnection>scm:git:ssh://github.com:protegeproject/github-commit-navigator-library.git</developerConnection>
+        <url>https://github.com/protegeproject/github-commit-navigator-library/tree/master</url>
+    </scm>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
