@@ -1,19 +1,19 @@
 package edu.stanford.protege.commitnavigator.model;
 
-public record RepositoryCoordinates(String ownerName, String repositoryName, String branchName) {
+public record BranchCoordinates(String ownerName, String repositoryName, String branchName) {
 
   public static final String DEFAULT_BRANCH = "main";
 
-  public static RepositoryCoordinates create(
+  public static BranchCoordinates create(
       String ownerName, String repositoryName, String branchName) {
-    return new RepositoryCoordinates(ownerName, repositoryName, branchName);
+    return new BranchCoordinates(ownerName, repositoryName, branchName);
   }
 
-  public static RepositoryCoordinates create(String ownerName, String repositoryName) {
+  public static BranchCoordinates create(String ownerName, String repositoryName) {
     return create(ownerName, repositoryName, DEFAULT_BRANCH);
   }
 
-  public static RepositoryCoordinates createFromUrl(String repositoryUrl, String branchName) {
+  public static BranchCoordinates createFromUrl(String repositoryUrl, String branchName) {
     // Remove protocol if present
     var url = repositoryUrl.replaceFirst("^https?://github\\.com/", "");
     // Remove .git suffix if present
@@ -32,7 +32,7 @@ public record RepositoryCoordinates(String ownerName, String repositoryName, Str
     return create(ownerName, repositoryName, branchName);
   }
 
-  public static RepositoryCoordinates createFromUrl(String repositoryUrl) {
+  public static BranchCoordinates createFromUrl(String repositoryUrl) {
     return createFromUrl(repositoryUrl, DEFAULT_BRANCH);
   }
 

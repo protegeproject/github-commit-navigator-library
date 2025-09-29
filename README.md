@@ -15,29 +15,26 @@ A modern Java library for navigating GitHub repository commits programmatically 
 
 ```xml
 <dependency>
-    <groupId>edu.stanford.protege.commitnavigator</groupId>
+    <groupId>edu.stanford.protege</groupId>
     <artifactId>github-commit-navigator</artifactId>
-    <version>2.0.0</version>
+    <version>2.0.2</version>
 </dependency>
 ```
 
 ### Basic Usage
 
 ```java
-import edu.stanford.protege.commitnavigator.GitHubRepository;
 import edu.stanford.protege.commitnavigator.GitHubRepositoryBuilderFactory;
-import edu.stanford.protege.commitnavigator.model.RepositoryCoordinates;
+import edu.stanford.protege.commitnavigator.model.BranchCoordinates;
 import edu.stanford.protege.commitnavigator.CommitNavigatorBuilder;
-import edu.stanford.protege.commitnavigator.utils.CommitNavigator;
-import edu.stanford.protege.commitnavigator.model.CommitMetadata;
 
 // Create repository coordinate from URL
-var coordinate = RepositoryCoordinates.createFromUrl("https://github.com/example/repo");
+var coordinate = BranchCoordinates.createFromUrl("https://github.com/example/repo");
 
 // Create repository using factory pattern
 var repository = GitHubRepositoryBuilderFactory.create(coordinate)
-    .withPersonalAccessToken("your-token-here")
-    .build();
+        .withPersonalAccessToken("your-token-here")
+        .build();
 
 // Initialize the repository
 repository.initialize();
@@ -73,7 +70,7 @@ repository.close();
 
 ```java
 // Create repository coordinate for the repository and branch
-var coordinate = RepositoryCoordinates.createFromUrl("https://github.com/example/repo", "develop");
+var coordinate = BranchCoordinates.createFromUrl("https://github.com/example/repo", "develop");
 
 // Configure repository with advanced options
 var repository = GitHubRepositoryBuilderFactory.create(coordinate)
@@ -108,7 +105,7 @@ For public repositories, authentication is optional:
 
 ```java
 // Create coordinate for public repository
-var coordinates = RepositoryCoordinates.createFromUrl("https://github.com/public/repo");
+var coordinates = BranchCoordinates.createFromUrl("https://github.com/public/repo");
 
 // Create repository without authentication
 var repository = GitHubRepositoryBuilderFactory.create(coordinates)
@@ -121,17 +118,17 @@ Filter commits to only include those that modified specific files using CommitNa
 
 ```java
 // Configure file filters using List
-var commitNavigator = CommitNavigatorBuilder.forWorkingDirectory("/path/to/local/directory")
+var commitNavigator = CommitNavigatorBuilder.forWorkingDirectory(workingDirectory)
     .fileFilters(List.of("src/main/java/Main.java", "README.md")) // Exact file paths
     .build();
 
 // Or using convenient varargs syntax
-var commitNavigator = CommitNavigatorBuilder.forWorkingDirectory("/path/to/local/directory")
+var commitNavigator = CommitNavigatorBuilder.forWorkingDirectory(workingDirectory)
     .fileFilters("*.java", "**/*.md", "src/**/*.xml") // Glob patterns
     .build();
 
 // Or mixed patterns with varargs
-var commitNavigator = CommitNavigatorBuilder.forWorkingDirectory("/path/to/local/directory")
+var commitNavigator = CommitNavigatorBuilder.forWorkingDirectory(workingDirectory)
     .fileFilters("pom.xml", "*.java", "docs/**/*.md") // Mixed patterns
     .build();
 ```
@@ -155,10 +152,10 @@ The library includes a CLI for quick repository analysis:
 
 ```bash
 # Basic usage
-java -jar github-commit-navigator-2.0.0.jar https://github.com/user/repo
+java -jar github-commit-navigator-2.0.2.jar https://github.com/user/repo
 
 # With authentication and filters
-java -jar github-commit-navigator-2.0.0.jar \
+java -jar github-commit-navigator-2.0.2.jar \
     --token your-token \
     --file-filter "*.java,*.md" \
     --branch develop \

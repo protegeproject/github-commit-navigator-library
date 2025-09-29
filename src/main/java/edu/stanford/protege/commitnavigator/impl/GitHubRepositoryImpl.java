@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
  * var coordinates = RepositoryCoordinates.create("owner", "repository");
  * var repository = GitHubRepositoryBuilderFactory.create(coordinates)
  *     .withPersonalAccessToken("ghp_xxxxxxxxxxxx")
- *     .localCloneDirectory(Paths.get("/tmp/my-repo"))
+ *     .localWorkingDirectory("/tmp/my-repo")
  *     .build();
  *
  * repository.initialize();

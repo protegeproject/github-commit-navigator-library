@@ -3,14 +3,14 @@ package edu.stanford.protege.commitnavigator;
 import static org.junit.jupiter.api.Assertions.*;
 
 import edu.stanford.protege.commitnavigator.config.AuthenticationConfig;
-import edu.stanford.protege.commitnavigator.model.RepositoryCoordinates;
+import edu.stanford.protege.commitnavigator.model.BranchCoordinates;
 import java.nio.file.Paths;
 import org.junit.jupiter.api.Test;
 
 class GitHubRepositoryBuilderTest {
 
-  private static final RepositoryCoordinates TEST_COORDINATE =
-      RepositoryCoordinates.create("example", "repo");
+  private static final BranchCoordinates TEST_COORDINATE =
+      BranchCoordinates.create("example", "repo");
 
   @Test
   void testBuilderWithPersonalAccessToken() {
@@ -72,7 +72,7 @@ class GitHubRepositoryBuilderTest {
     var token = "test-token";
     var localPath = "/tmp/test-repo";
     var branch = "develop";
-    var coordinate = RepositoryCoordinates.create("example", "repo", branch);
+    var coordinate = BranchCoordinates.create("example", "repo", branch);
 
     var navigator =
         GitHubRepositoryBuilderFactory.create(coordinate)
@@ -92,7 +92,7 @@ class GitHubRepositoryBuilderTest {
 
   @Test
   void testBuilderWithoutAuthentication() {
-    var publicRepoCoordinate = RepositoryCoordinates.create("example", "public-repo");
+    var publicRepoCoordinate = BranchCoordinates.create("example", "public-repo");
 
     var navigator = GitHubRepositoryBuilderFactory.create(publicRepoCoordinate).build();
 
