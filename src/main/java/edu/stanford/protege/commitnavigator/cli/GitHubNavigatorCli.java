@@ -2,7 +2,7 @@ package edu.stanford.protege.commitnavigator.cli;
 
 import edu.stanford.protege.commitnavigator.CommitNavigatorBuilder;
 import edu.stanford.protege.commitnavigator.GitHubRepositoryBuilderFactory;
-import edu.stanford.protege.commitnavigator.model.RepositoryCoordinates;
+import edu.stanford.protege.commitnavigator.model.BranchCoordinates;
 import java.util.concurrent.Callable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,7 +90,7 @@ public class GitHubNavigatorCli implements Callable<Integer> {
   public Integer call() throws Exception {
     try {
       // Extract repository coordinate from URL
-      var coordinate = RepositoryCoordinates.createFromUrl(repositoryUrl, branch);
+      var coordinate = BranchCoordinates.createFromUrl(repositoryUrl, branch);
 
       // Create repositoryBuilder using factory pattern
       var repositoryBuilder = GitHubRepositoryBuilderFactory.create(coordinate);

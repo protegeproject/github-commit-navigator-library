@@ -3,7 +3,7 @@ package edu.stanford.protege.commitnavigator;
 import edu.stanford.protege.commitnavigator.config.AuthenticationConfig;
 import edu.stanford.protege.commitnavigator.config.RepositoryConfig;
 import edu.stanford.protege.commitnavigator.impl.GitHubRepositoryImpl;
-import edu.stanford.protege.commitnavigator.model.RepositoryCoordinates;
+import edu.stanford.protege.commitnavigator.model.BranchCoordinates;
 import edu.stanford.protege.commitnavigator.utils.AuthenticationManager;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -37,8 +37,8 @@ public class GitHubRepositoryBuilder {
   private final AuthenticationManager authManager;
 
   public GitHubRepositoryBuilder(
-      RepositoryCoordinates repositoryCoordinates, AuthenticationManager authManager) {
-    this.configBuilder = RepositoryConfig.builder(repositoryCoordinates);
+      BranchCoordinates branchCoordinates, AuthenticationManager authManager) {
+    this.configBuilder = RepositoryConfig.builder(branchCoordinates);
     this.authManager = Objects.requireNonNull(authManager, "Authentication manager cannot be null");
   }
 

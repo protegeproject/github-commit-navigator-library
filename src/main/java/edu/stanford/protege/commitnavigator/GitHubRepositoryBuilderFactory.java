@@ -1,6 +1,6 @@
 package edu.stanford.protege.commitnavigator;
 
-import edu.stanford.protege.commitnavigator.model.RepositoryCoordinates;
+import edu.stanford.protege.commitnavigator.model.BranchCoordinates;
 import edu.stanford.protege.commitnavigator.utils.AuthenticationManager;
 import edu.stanford.protege.commitnavigator.utils.impl.AuthenticationManagerImpl;
 import java.util.Objects;
@@ -33,15 +33,15 @@ public class GitHubRepositoryBuilderFactory {
    * <p>The returned builder includes default implementations of {@link AuthenticationManager} and
    * the supplied repository coordinates.
    *
-   * @param repositoryCoordinates the repository coordinate containing owner, repo, and branch
+   * @param branchCoordinates the repository coordinate containing owner, repo, and branch
    * @return a pre-configured {@link GitHubRepositoryBuilder} for public repository access
    * @throws NullPointerException if repositoryCoordinates is null
    */
-  public static GitHubRepositoryBuilder create(RepositoryCoordinates repositoryCoordinates) {
-    Objects.requireNonNull(repositoryCoordinates, "Repository coordinate cannot be null");
+  public static GitHubRepositoryBuilder create(BranchCoordinates branchCoordinates) {
+    Objects.requireNonNull(branchCoordinates, "Repository coordinate cannot be null");
 
     var authManager = new AuthenticationManagerImpl();
 
-    return new GitHubRepositoryBuilder(repositoryCoordinates, authManager);
+    return new GitHubRepositoryBuilder(branchCoordinates, authManager);
   }
 }
