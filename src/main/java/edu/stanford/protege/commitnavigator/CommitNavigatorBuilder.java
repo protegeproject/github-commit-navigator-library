@@ -252,10 +252,14 @@ public class CommitNavigatorBuilder {
           commits.add(commitMetadata);
         }
       }
+      // Throw an exception to ensure we have commits to process before continuing
+      if (commits.isEmpty()) {
+        throw new RepositoryException("No relevant commits found at: " + workingDirectory);
+      }
       return commits;
 
     } catch (IOException e) {
-      throw new RepositoryException("Failed to build commit list", e);
+      throw new RepositoryException("Failed to build commit list at: " + workingDirectory, e);
     }
   }
 
