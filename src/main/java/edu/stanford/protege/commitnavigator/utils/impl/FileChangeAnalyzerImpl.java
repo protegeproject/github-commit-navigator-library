@@ -165,7 +165,22 @@ public class FileChangeAnalyzerImpl implements FileChangeAnalyzer {
     if (filter.contains("*") || filter.contains("?")) {
       try {
         var matcher = FileSystems.getDefault().getPathMatcher("glob:" + filter);
-        return matcher.matches(FileSystems.getDefault().getPath(filePath));
+        var path = FileSystems.getDefault().getPath(filePath);
+
+        // Check if the path matches the filter
+        if (matcher.matches(path)) {
+          return true;
+        }
+
+        // Special handling for **/ patterns to include also root directory files
+        // e.g., "**/*.owl" should also match any OWL files in the root directory
+        if (filter.startsWith("**/")) {
+          var rootPattern = filter.substring(3); // Remove "**/" prefix
+          var rootMatcher = FileSystems.getDefault().getPathMatcher("glob:" + rootPattern);
+          return rootMatcher.matches(path);
+        }
+
+        return false;
       } catch (Exception e) {
         logger.warn("Invalid glob pattern: {}", filter, e);
         return false;
