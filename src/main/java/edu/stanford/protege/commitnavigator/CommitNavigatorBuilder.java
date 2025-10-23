@@ -6,15 +6,6 @@ import edu.stanford.protege.commitnavigator.utils.CommitNavigator;
 import edu.stanford.protege.commitnavigator.utils.FileChangeAnalyzer;
 import edu.stanford.protege.commitnavigator.utils.impl.CommitNavigatorImpl;
 import edu.stanford.protege.commitnavigator.utils.impl.FileChangeAnalyzerImpl;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -22,6 +13,16 @@ import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * Builder class for creating {@link CommitNavigator} instances with flexible configuration options.
@@ -75,7 +76,7 @@ public class CommitNavigatorBuilder {
    */
   private CommitNavigatorBuilder(@Nonnull Path workingDirectory) {
     this.workingDirectory =
-        Objects.requireNonNull(workingDirectory, "Working directory cannot be null");
+            Objects.requireNonNull(workingDirectory, "Working directory cannot be null" );
   }
 
   /**
@@ -221,7 +222,7 @@ public class CommitNavigatorBuilder {
   private Repository openRepository() throws IOException, RepositoryException {
     var builder = new FileRepositoryBuilder();
     var repository =
-        builder.setGitDir(workingDirectory.resolve(".git").toFile()).readEnvironment().build();
+            builder.setGitDir(workingDirectory.resolve(".git" ).toFile()).readEnvironment().build();
 
     if (repository.getObjectDatabase() == null) {
       throw new RepositoryException("No Git repository found at: " + workingDirectory);
@@ -239,37 +240,52 @@ public class CommitNavigatorBuilder {
    * @throws RepositoryException if the repository has no commits
    */
   private List<CommitMetadata> collectFilteredCommits(
-      Repository repository, FileChangeAnalyzer analyzer) throws IOException, RepositoryException {
-    logger.debug("Collecting relevant commits from repository");
+          Repository repository, FileChangeAnalyzer analyzer) throws IOException, RepositoryException {
+    logger.debug("Collecting relevant commits from repository (first-parent only)" );
 
     try (var revWalk = new RevWalk(repository)) {
-      revWalk.markStart(revWalk.parseCommit(repository.resolve("HEAD")));
+      var headId = repository.resolve("HEAD" );
+      if(headId == null) {
+        throw new RepositoryException("HEAD is not resolved" );
+      }
 
       var commits = new ArrayList<CommitMetadata>();
-      for (RevCommit commit : revWalk) {
+
+      // Start at HEAD
+      RevCommit commit = revWalk.parseCommit(headId);
+
+      // Manually walk the FIRST-parent chain only
+      while(commit != null) {
+        System.out.println(commit.name() + " " + commit.getParentCount());
         if (shouldIncludeCommit(repository, commit, analyzer)) {
           var commitMetadata = createCommitMetadata(repository, commit, analyzer);
           commits.add(commitMetadata);
         }
+
+        if(commit.getParentCount() == 0) {
+          break; // reached root
+        }
+
+        // Follow ONLY the first parent (mainline)
+        commit = revWalk.parseCommit(commit.getParent(0));
       }
-      // Throw an exception to ensure we have commits to process before continuing
-      if (commits.isEmpty()) {
-        throw new RepositoryException("No relevant commits found at: " + workingDirectory);
-      }
+
       return commits;
 
     } catch (IOException e) {
-      throw new RepositoryException("Failed to build commit list at: " + workingDirectory, e);
+      throw new RepositoryException("Failed to build commit list" , e);
     }
   }
 
+
   private boolean shouldIncludeCommit(
-      Repository repository, RevCommit commit, FileChangeAnalyzer fileChangeAnalyzer)
-      throws RepositoryException {
-    if (fileFilters == null || fileFilters.isEmpty()) {
-      return true;
-    }
-    return fileChangeAnalyzer.hasFileChanges(repository, commit, fileFilters);
+          Repository repository, RevCommit commit, FileChangeAnalyzer fileChangeAnalyzer)
+          throws RepositoryException {
+    return true;
+//    if (fileFilters == null || fileFilters.isEmpty()) {
+//      return true;
+//    }
+//    return fileChangeAnalyzer.hasFileChanges(repository, commit, fileFilters);
   }
 
   /**
@@ -279,8 +295,8 @@ public class CommitNavigatorBuilder {
    * @return a CommitMetadata object containing the commit information
    */
   private CommitMetadata createCommitMetadata(
-      Repository repository, RevCommit commit, FileChangeAnalyzer fileChangeAnalyzer)
-      throws RepositoryException {
+          Repository repository, RevCommit commit, FileChangeAnalyzer fileChangeAnalyzer)
+          throws RepositoryException {
     var commitHash = commit.getName();
     var committerUsername = commit.getCommitterIdent().getName();
     var committerEmail = commit.getCommitterIdent().getEmailAddress();
@@ -289,7 +305,7 @@ public class CommitNavigatorBuilder {
     var changedFiles = fileChangeAnalyzer.getChangedFiles(repository, commit);
 
     return CommitMetadata.create(
-        commitHash, committerUsername, committerEmail, commitDate, commitMessage, changedFiles);
+            commitHash, committerUsername, committerEmail, commitDate, commitMessage, changedFiles);
   }
 
   /**

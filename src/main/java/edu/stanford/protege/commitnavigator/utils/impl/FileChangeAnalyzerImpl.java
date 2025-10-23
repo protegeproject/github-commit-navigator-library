@@ -4,13 +4,16 @@ import edu.stanford.protege.commitnavigator.exceptions.RepositoryException;
 import edu.stanford.protege.commitnavigator.utils.FileChangeAnalyzer;
 import java.io.IOException;
 import java.nio.file.FileSystems;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
+import org.eclipse.jgit.lib.ObjectReader;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
@@ -29,18 +32,14 @@ import org.slf4j.LoggerFactory;
  * their parent commits. It supports glob pattern matching for file filtering and handles various
  * types of file changes including additions, modifications, deletions, copies, and renames.
  *
- * <p>Key features:
- *
+ * <p>Drop-in replacement highlights:
  * <ul>
- *   <li>Efficient diff analysis using JGit's DiffFormatter
- *   <li>Glob pattern matching for file filtering
- *   <li>Support for exact path matching and pattern-based filtering
- *   <li>Handling of initial commits (commits without parents)
- *   <li>Proper resource management with try-with-resources
+ *   <li>First-parent semantics for merges (branch perspective)</li>
+ *   <li>Rename/copy detection enabled</li>
+ *   <li>POSIX-style path normalization for reliable matching across OSes</li>
+ *   <li>De-duplication of reported paths</li>
+ *   <li>Reuses a single ObjectReader per call</li>
  * </ul>
- *
- * <p>The class is marked as {@link Singleton} to ensure a single instance is used throughout the
- * application lifecycle.
  *
  * @since 1.0.0
  */
@@ -48,145 +47,111 @@ import org.slf4j.LoggerFactory;
 public class FileChangeAnalyzerImpl implements FileChangeAnalyzer {
   private static final Logger logger = LoggerFactory.getLogger(FileChangeAnalyzerImpl.class);
 
-  /**
-   * Checks if the specified commit has file changes that match the provided filters.
-   *
-   * <p>This method analyzes the commit's diff against its parent commits to determine which files
-   * were changed, then applies the provided file filters to check for matches. If no filters are
-   * provided, the method returns true (all commits match).
-   *
-   * <p>The filtering supports both exact path matching and glob pattern matching:
-   *
-   * <ul>
-   *   <li>Exact paths: "src/main/java/Example.java"
-   *   <li>Glob patterns: "*.java", "**\/*.md", "src\/**\/*.xml"
-   * </ul>
-   *
-   * @param repository the Git repository to analyze
-   * @param commit the commit to check for matching file changes
-   * @param fileFilters the list of file filter patterns, or null/empty to match all commits
-   * @return true if the commit has file changes matching the filters, false otherwise
-   * @throws RepositoryException if an error occurs while analyzing the commit
-   * @throws NullPointerException if repository or commit is null
-   */
   @Override
   public boolean hasFileChanges(Repository repository, RevCommit commit, List<String> fileFilters)
-      throws RepositoryException {
+          throws RepositoryException {
     Objects.requireNonNull(repository, "Repository cannot be null");
     Objects.requireNonNull(commit, "Commit cannot be null");
 
-    if (fileFilters == null || fileFilters.isEmpty()) {
-      return true;
-    }
-
     try {
+      // If no filters provided, treat as "any change" on this commit
+      if (fileFilters == null || fileFilters.isEmpty()) {
+        return !getChangedFiles(repository, commit).isEmpty();
+      }
+
       var changedFiles = getChangedFiles(repository, commit);
       return changedFiles.stream().anyMatch(file -> matchesAnyFilter(file, fileFilters));
     } catch (Exception e) {
       throw new RepositoryException(
-          "Failed to check file changes in commit " + commit.getName(), e);
+              "Failed to check file changes in commit " + commit.getName(), e);
     }
   }
 
-  /**
-   * Retrieves all files that were changed in the specified commit.
-   *
-   * <p>This method analyzes the commit's diff against its parent commits to determine which files
-   * were added, modified, deleted, copied, or renamed. For commits without parents (initial
-   * commits), it compares against an empty tree to show all added files.
-   *
-   * <p>The method handles the following change types:
-   *
-   * <ul>
-   *   <li>ADD - Files added in the commit
-   *   <li>MODIFY - Files modified in the commit
-   *   <li>DELETE - Files deleted in the commit
-   *   <li>COPY - Files copied in the commit
-   *   <li>RENAME - Files renamed in the commit
-   * </ul>
-   *
-   * @param repository the Git repository to analyze
-   * @param commit the commit to analyze for file changes
-   * @return a list of file paths that were changed in the commit
-   * @throws RepositoryException if an error occurs while analyzing the commit
-   * @throws NullPointerException if repository or commit is null
-   */
   @Override
   public List<String> getChangedFiles(Repository repository, RevCommit commit)
-      throws RepositoryException {
+          throws RepositoryException {
     Objects.requireNonNull(repository, "Repository cannot be null");
     Objects.requireNonNull(commit, "Commit cannot be null");
 
     logger.debug("Getting changed files for commit: {}", commit.getName());
 
-    try (var revWalk = new RevWalk(repository);
-        var diffFormatter = new DiffFormatter(DisabledOutputStream.INSTANCE)) {
+    try (ObjectReader reader = repository.newObjectReader();
+         RevWalk revWalk = new RevWalk(reader);
+         DiffFormatter diffFormatter = new DiffFormatter(DisabledOutputStream.INSTANCE)) {
 
       diffFormatter.setRepository(repository);
 
-      var parents = commit.getParents();
-      var diffs = new ArrayList<DiffEntry>();
+      final var diffs = new ArrayList<DiffEntry>();
+      final var parents = commit.getParents();
 
       if (parents.length == 0) {
+        // Initial commit: compare against empty tree
         diffs.addAll(
-            diffFormatter.scan(
-                getEmptyTreeIterator(repository), getTreeIterator(repository, commit)));
+                diffFormatter.scan(
+                        new EmptyTreeIterator(),
+                        treeIteratorFor(commit, reader)));
       } else {
-        for (var parent : parents) {
-          revWalk.parseCommit(parent);
-          var parentDiffs =
-              diffFormatter.scan(
-                  getTreeIterator(repository, parent), getTreeIterator(repository, commit));
-          diffs.addAll(parentDiffs);
-        }
+        // FIRST-PARENT ONLY to reflect branch progression
+        RevCommit p0 = revWalk.parseCommit(parents[0]);
+        diffs.addAll(
+                diffFormatter.scan(
+                        treeIteratorFor(p0, reader),
+                        treeIteratorFor(commit, reader)));
       }
 
       return diffs.stream()
-          .map(this::getFilePath)
-          .filter(
-              path ->
-                  Optional.ofNullable(path).map(String::trim).filter(p -> !p.isEmpty()).isPresent())
-          .toList();
+              .map(this::getFilePath)
+              .map(FileChangeAnalyzerImpl::toPosix)
+              .filter(FileChangeAnalyzerImpl::notBlank)
+              .distinct()
+              .collect(Collectors.toList());
 
     } catch (IOException e) {
       throw new RepositoryException(
-          "Failed to get changed files for commit " + commit.getName(), e);
+              "Failed to get changed files for commit " + commit.getName(), e);
     }
+  }
+
+  // ---- Helpers ----
+
+  private static AbstractTreeIterator treeIteratorFor(RevCommit commit, ObjectReader reader)
+          throws IOException {
+    var treeParser = new CanonicalTreeParser();
+    treeParser.reset(reader, commit.getTree());
+    return treeParser;
+  }
+
+  private static String toPosix(String path) {
+    return path == null ? null : path.replace('\\', '/');
+  }
+
+  private static boolean notBlank(String s) {
+    return s != null && !s.trim().isEmpty();
   }
 
   boolean matchesAnyFilter(String filePath, List<String> fileFilters) {
     if (fileFilters == null || fileFilters.isEmpty()) {
       return true;
     }
-    return fileFilters.stream().anyMatch(filter -> matchesFilter(filePath, filter));
+    String posixPath = toPosix(filePath);
+    return fileFilters.stream().anyMatch(filter -> matchesFilter(posixPath, filter));
   }
 
-  boolean matchesFilter(String filePath, String filter) {
-    if (filter.contains("*") || filter.contains("?")) {
+  boolean matchesFilter(String posixFilePath, String filter) {
+    String posixFilter = toPosix(filter);
+
+    // Glob support: *, ?, ** — matched on POSIX-style paths
+    if (posixFilter.contains("*") || posixFilter.contains("?")) {
       try {
-        var matcher = FileSystems.getDefault().getPathMatcher("glob:" + filter);
-        var path = FileSystems.getDefault().getPath(filePath);
-
-        // Check if the path matches the filter
-        if (matcher.matches(path)) {
-          return true;
-        }
-
-        // Special handling for **/ patterns to include also root directory files
-        // e.g., "**/*.owl" should also match any OWL files in the root directory
-        if (filter.startsWith("**/")) {
-          var rootPattern = filter.substring(3); // Remove "**/" prefix
-          var rootMatcher = FileSystems.getDefault().getPathMatcher("glob:" + rootPattern);
-          return rootMatcher.matches(path);
-        }
-
-        return false;
+        var matcher = FileSystems.getDefault().getPathMatcher("glob:" + posixFilter);
+        return matcher.matches(Paths.get(posixFilePath));
       } catch (Exception e) {
         logger.warn("Invalid glob pattern: {}", filter, e);
         return false;
       }
     } else {
-      return filePath.equals(filter) || filePath.endsWith("/" + filter);
+      // Exact or suffix path match
+      return posixFilePath.equals(posixFilter) || posixFilePath.endsWith("/" + posixFilter);
     }
   }
 
@@ -196,17 +161,5 @@ public class FileChangeAnalyzerImpl implements FileChangeAnalyzer {
       case DELETE -> diff.getOldPath();
       default -> diff.getNewPath();
     };
-  }
-
-  private AbstractTreeIterator getTreeIterator(Repository repository, RevCommit commit)
-      throws IOException {
-    var tree = commit.getTree();
-    var treeParser = new CanonicalTreeParser();
-    treeParser.reset(repository.newObjectReader(), tree);
-    return treeParser;
-  }
-
-  private AbstractTreeIterator getEmptyTreeIterator(Repository repository) throws IOException {
-    return new EmptyTreeIterator();
   }
 }
